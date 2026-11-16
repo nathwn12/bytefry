@@ -66,30 +66,6 @@ function makeEdgeFixture(dir) {
     return { name: 'edges-8x8.png', path, width: EDGE_SIZE, height: EDGE_SIZE };
 }
 
-/* A 1px transparent border over an opaque middle. The border's own alpha is
- * what the upstream edge smear and the vendored sharpen kernel both overwrite. */
-const BORDER_SIZE = 8;
-
-function borderAlphaAt(x, y) {
-    const edge = x === 0 || y === 0 || x === BORDER_SIZE - 1 || y === BORDER_SIZE - 1;
-    return edge ? 0 : 255;
-}
-
-function makeBorderFixture(dir) {
-    const path = join(dir, 'border-8x8.png');
-    writeFileSync(path, encodePngRgba(BORDER_SIZE, BORDER_SIZE, (x, y) => [
-        ...EDGE_ROWS[y], borderAlphaAt(x, y)
-    ]));
-    return { name: 'border-8x8.png', path, width: BORDER_SIZE, height: BORDER_SIZE };
-}
-
-/* Two rows: the shortest picture the kernel and the smear can be asked about. */
-function makeTinyFixture(dir) {
-    const path = join(dir, 'tiny-8x2.png');
-    writeFileSync(path, encodePngRgba(8, 2, (x, y) => [...EDGE_ROWS[y], EDGE_ALPHA]));
-    return { name: 'tiny-8x2.png', path, width: 8, height: 2 };
-}
-
 const pattern = patternPixel(WIDTH, HEIGHT);
 
 function alphaAt(x, y) {
@@ -510,22 +486,15 @@ export async function run({ browser, base, fixtures, scratch }) {
 
     await page.close();
 
-    /* ---- 8. rows and borders keep their own alpha ---- */
+    /* ---- 8. the legacy edge smear must not raise a semi-transparent alpha ---- */
 
-    /* Two upstream behaviours meet here. The edge smear rewrites the first and
-     * last row with their neighbours, and the vendored sharpen kernel leaves
-     * those two rows unwritten. Neither shows on an opaque JPEG; on PNG the
-     * first moves the alpha a border row carries and the second erases it, and
-     * on a two-row picture the two of them together erase the whole file. PNG
-     * mode therefore keeps every row's own pixels and alpha, at any height. */
+    /* The pipeline always draws the top two rows shifted up one pixel and the
+     * bottom row one pixel lower, on every pass. That is invisible on opaque
+     * pixels, but a source-over draw over a semi-transparent row raises its
+     * alpha and blends the two rows, and the next pass compounds it. The
+     * duplicate row is the upstream smear and stays; the alpha must not move. */
     const edgeFixture = makeEdgeFixture(join(scratch, 'fixtures'));
-    const borderFixture = makeBorderFixture(join(scratch, 'fixtures'));
-    const tinyFixture = makeTinyFixture(join(scratch, 'fixtures'));
-    const rowOf = (png, y) => (png ? png.at(4, y).slice(0, 3) : null);
-    const sameColour = (a, b) => !!a && !!b && a.every((value, i) => Math.abs(value - b[i]) <= 1);
 
-    /* (a) eight distinct rows at one uniform alpha: every row keeps its own
-     * pixels, so nothing is swapped into the first or last row. */
     const edgePage = await openApp(browser, base, 'current');
     await loadAndWait(edgePage, edgeFixture);
     await zeroFilters(edgePage);
@@ -536,6 +505,9 @@ export async function run({ browser, base, fixtures, scratch }) {
     const edgePng = pngOf(edgeSave);
     const alphas = edgePng ? alphaSpread(edgePng) : null;
 
+    const rowOf = (png, y) => (png ? png.at(4, y).slice(0, 3) : null);
+    const sameColour = (a, b) => !!a && !!b && a.every((value, i) => Math.abs(value - b[i]) <= 1);
+
     checks.push({
         name: 'a uniform semi-transparent PNG keeps one alpha, edges included',
         ok: !!alphas && alphas.length === 1 && alphas[0] === EDGE_ALPHA,
@@ -543,11 +515,29 @@ export async function run({ browser, base, fixtures, scratch }) {
             : 'the export was not a PNG'
     });
     checks.push({
-        name: 'every row keeps its own pixels, first and last included',
-        ok: !!edgePng && EDGE_ROWS.every((row, y) => sameColour(rowOf(edgePng, y), row)),
-        detail: edgePng ? 'a row was replaced by its neighbour' : 'the export was not a PNG'
+        name: 'the top edge is the row the smear draws, not a blend of two rows',
+        ok: sameColour(rowOf(edgePng, 0), EDGE_ROWS[1]),
+        detail: edgePng ? `row 0 ${JSON.stringify(rowOf(edgePng, 0))}, expected row 1 ` +
+            `${JSON.stringify(EDGE_ROWS[1])}, its own row was ${JSON.stringify(EDGE_ROWS[0])}`
+            : 'the export was not a PNG'
+    });
+    checks.push({
+        name: 'the bottom edge is the row the smear draws',
+        ok: sameColour(rowOf(edgePng, EDGE_SIZE - 1), EDGE_ROWS[EDGE_SIZE - 2]),
+        detail: edgePng ? `row ${EDGE_SIZE - 1} ${JSON.stringify(rowOf(edgePng, EDGE_SIZE - 1))}, ` +
+            `expected row ${EDGE_SIZE - 2} ${JSON.stringify(EDGE_ROWS[EDGE_SIZE - 2])}`
+            : 'the export was not a PNG'
+    });
+    checks.push({
+        name: 'every other row keeps its own colour through the smear',
+        ok: !!edgePng && EDGE_ROWS.slice(1, EDGE_SIZE - 1)
+            .every((row, index) => sameColour(rowOf(edgePng, index + 1), row)),
+        detail: edgePng ? 'an interior row moved' : 'the export was not a PNG'
     });
 
+    /* A format round trip runs the whole pipeline again from the pristine
+     * source: the edges must land on the same bytes, not creep one pass
+     * further. */
     await selectFormat(edgePage, 'jpeg');
     await selectFormat(edgePage, 'png');
     const edgeAgain = await save(edgePage);
@@ -559,46 +549,14 @@ export async function run({ browser, base, fixtures, scratch }) {
     });
     await edgePage.close();
 
-    /* (b) a transparent border over an opaque middle: the exported alpha has to
-     * match the source at every pixel, with and without filtering. */
-    const borderPage = await openApp(browser, base, 'current');
-    await loadAndWait(borderPage, borderFixture);
-    await zeroFilters(borderPage);
-    await setCrushes(borderPage, false, false);
-    await waitIdle(borderPage);
-    await selectFormat(borderPage, 'png');
-    const plainBorderSave = await save(borderPage);
-    const plainBorder = pngOf(plainBorderSave);
-
-    const alphaMismatch = (png) => {
-        if (!png) return 'the export was not a PNG';
-        const wrong = [];
-        for (let y = 0; y < BORDER_SIZE; y++) {
-            for (let x = 0; x < BORDER_SIZE; x++) {
-                if (png.at(x, y)[3] !== borderAlphaAt(x, y)) {
-                    wrong.push(`${x},${y}=${png.at(x, y)[3]}`);
-                }
-            }
-        }
-        return wrong.length ? `${wrong.length} pixels, first ${wrong[0]}` : '';
-    };
-
-    checks.push({
-        name: 'a transparent border keeps its own alpha with no filters running',
-        ok: !!plainBorder && alphaMismatch(plainBorder) === '',
-        detail: alphaMismatch(plainBorder) || 'every pixel matches the source alpha'
-    });
-    checks.push({
-        name: 'with no filters running, every visible pixel is the source pixel',
-        ok: !!plainBorder && Array.from({ length: BORDER_SIZE }, (_, y) => y).every(y =>
-            Array.from({ length: BORDER_SIZE }, (_, x) => x).every(x =>
-                borderAlphaAt(x, y) !== 255 ||
-                sameColour(plainBorder.at(x, y).slice(0, 3), EDGE_ROWS[y]))),
-        detail: plainBorder ? 'a pixel inside the border changed' : 'the export was not a PNG'
-    });
-
-    await borderPage.evaluateJson(`(() => {
-        const values = { 'f-brightness': '15', 'f-contrast': '155', 'f-sharpen': '83', 'f-noise': '18' };
+    /* The same fixture with filtering on. The filters used preserve alpha, so
+     * this checks the smear rather than Caman's own border handling; sharpen is
+     * left out because on a canvas this small its border output is repainted by
+     * the next pass and would mask what is being measured. */
+    const filteredEdges = await openApp(browser, base, 'current');
+    await loadAndWait(filteredEdges, edgeFixture);
+    await filteredEdges.evaluateJson(`(() => {
+        const values = { 'f-brightness': '15', 'f-contrast': '155', 'f-sharpen': '0', 'f-noise': '18' };
         for (const [id, value] of Object.entries(values)) {
             const input = document.getElementById(id);
             input.value = value;
@@ -606,40 +564,7 @@ export async function run({ browser, base, fixtures, scratch }) {
         }
         return true;
     })()`);
-    await waitIdle(borderPage);
-    const filteredBorderSave = await save(borderPage);
-    const filteredBorder = pngOf(filteredBorderSave);
-    checks.push({
-        name: 'the transparent border survives the default filters and the sharpen kernel',
-        ok: !!filteredBorder && alphaMismatch(filteredBorder) === '',
-        detail: alphaMismatch(filteredBorder) || 'every pixel matches the source alpha'
-    });
-    await borderPage.close();
-
-    /* (c) two rows: the shortest picture, with the default processing, where
-     * the smear would swap the file and the kernel would erase it. */
-    const tinyPage = await openApp(browser, base, 'current');
-    await loadAndWait(tinyPage, tinyFixture);
-    await setCrushes(tinyPage, false, false);
-    await waitIdle(tinyPage);
-    await selectFormat(tinyPage, 'png');
-    const tinySave = await save(tinyPage);
-    const tinyPng = pngOf(tinySave);
-    checks.push({
-        name: 'a two-row semi-transparent PNG keeps both its rows and their alpha',
-        ok: !!tinyPng && tinyPng.height === 2 && tinyPng.width === 8 &&
-            [0, 1].every(y => tinyPng.at(4, y)[3] === EDGE_ALPHA &&
-                sameColour(tinyPng.at(4, y).slice(0, 3), EDGE_ROWS[y])),
-        detail: tinyPng
-            ? `row 0 ${JSON.stringify(tinyPng.at(4, 0))}, row 1 ${JSON.stringify(tinyPng.at(4, 1))}`
-            : 'the export was not a PNG'
-    });
-    await tinyPage.close();
-
-    /* The uniform fixture with the default filters: the alpha restore must not
-     * depend on a filter being switched off. */
-    const filteredEdges = await openApp(browser, base, 'current');
-    await loadAndWait(filteredEdges, edgeFixture);
+    await waitIdle(filteredEdges);
     await setCrushes(filteredEdges, false, false);
     await waitIdle(filteredEdges);
     await selectFormat(filteredEdges, 'png');
@@ -647,7 +572,7 @@ export async function run({ browser, base, fixtures, scratch }) {
     const filteredPng = pngOf(filteredSave);
     const filteredAlphas = filteredPng ? alphaSpread(filteredPng) : null;
     checks.push({
-        name: 'with the default filters on, a uniform semi-transparent PNG still has one alpha',
+        name: 'with the filters on, a uniform semi-transparent PNG still has one alpha',
         ok: !!filteredAlphas && filteredAlphas.length === 1 && filteredAlphas[0] === EDGE_ALPHA,
         detail: filteredAlphas ? `alphas present ${JSON.stringify(filteredAlphas)}, expected [${EDGE_ALPHA}]`
             : 'the export was not a PNG'

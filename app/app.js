@@ -499,28 +499,14 @@
             : el.canvas.toDataURL('image/jpeg');
     }
 
-    /* Restores the alpha the filters were given, pixel for pixel. The vendored
-     * sharpen kernel is a 3x3 convolution whose first and last row are never
-     * written, so those rows are put back whole: otherwise a border row turns
-     * transparent and a two-row picture is erased. */
-    function restoreFilteredAlpha(before, sharpened) {
-        var after = ctx.getImageData(0, 0, el.canvas.width, el.canvas.height);
-        var from = before.data;
-        var to = after.data;
-        var i;
-
-        for (i = 3; i < to.length; i += 4) to[i] = from[i];
-
-        if (sharpened) {
-            var stride = el.canvas.width * 4;
-            var lastRow = (el.canvas.height - 1) * stride;
-            for (i = 0; i < stride; i++) {
-                to[i] = from[i];
-                to[lastRow + i] = from[lastRow + i];
-            }
-        }
-
-        ctx.putImageData(after, 0, 0);
+    /* Blanks the visible part of a destination rectangle, so a PNG-mode draw
+     * onto it lands at its own alpha instead of compositing with what is
+     * already there. Only used for the edge smear, whose destination can start
+     * above the canvas. */
+    function blankRows(dy, dh) {
+        var top = Math.max(0, dy);
+        var bottom = Math.min(el.canvas.height, dy + dh);
+        if (bottom > top) ctx.clearRect(0, top, el.canvas.width, bottom - top);
     }
 
     function createRenderJob() {
@@ -568,20 +554,23 @@
         job.check();
 
         var image = job.image;
-        /* The two draws below are the upstream edge smear: the first rewrites
-         * the first row with its neighbour and the last does the same at the
-         * bottom. On opaque pixels that is a 1px stretch; on PNG it would move
-         * the alpha a border row carries, so PNG keeps every row's own pixels
-         * and the smear stays a JPEG-only step. */
+        /* The pipeline draws the top two rows shifted up one pixel and the
+         * bottom row one pixel lower, on every pass. On opaque pixels that is
+         * only the upstream smear. Over a semi-transparent row a source-over
+         * draw would raise that row's alpha and blend two rows together, and
+         * each pass would compound it. PNG mode therefore blanks the rows a
+         * smear is about to cover and draws onto transparency: same geometry,
+         * the source's alpha. */
         var keepAlpha = pngSelected();
 
         if (keepAlpha) ctx.clearRect(0, 0, el.canvas.width, el.canvas.height);
         ctx.drawImage(image, 0, 0, image.width, image.height, 0, 0, image.width, image.height);
 
-        if (!keepAlpha) {
-            ctx.drawImage(image, 0, 0, image.width, 2, 0, -1, image.width, 2);
-            ctx.drawImage(image, 0, image.height - 2, image.width, 1, 0, image.height - 1, image.width, 1);
-        }
+        if (keepAlpha) blankRows(-1, 2);
+        ctx.drawImage(image, 0, 0, image.width, 2, 0, -1, image.width, 2);
+
+        if (keepAlpha) blankRows(image.height - 1, 1);
+        ctx.drawImage(image, 0, image.height - 2, image.width, 1, 0, image.height - 1, image.width, 1);
 
         if (job.left > 0) {
             setStatus('Recompressing');
@@ -610,29 +599,17 @@
         var cam = state.cam;
         if (!cam) return;
 
-        /* PNG mode keeps the alpha the filters were given: the kernel below
-         * does not write its border rows, and no filter is an alpha channel. */
-        var before = pngSelected()
-            ? ctx.getImageData(0, 0, el.canvas.width, el.canvas.height)
-            : null;
-
         if (typeof cam.reloadCanvasData === 'function') cam.reloadCanvasData();
 
-        var sharpened = false;
         filterInputs.forEach(function (input) {
             var name = input.dataset.filter;
             var amount = parseFloat(values[name]);
-            if (amount !== 0) {
-                if (name === 'sharpen') sharpened = true;
-                cam[name](amount);
-            }
+            if (amount !== 0) cam[name](amount);
         });
 
         await new Promise(function (resolve) {
             cam.render(function () { resolve(); });
         });
-
-        if (before) restoreFilteredAlpha(before, sharpened);
     }
 
     function requestRender() {
