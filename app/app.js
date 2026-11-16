@@ -65,10 +65,7 @@
         jpegAfter: byId('jpeg-after'),
         jpegOpts: byId('jpeg_opts'),
         jpegTimes: byId('jpeg_times'),
-        jpegQuality: byId('jpeg_quality'),
-        jpegOut: byId('out-jpeg'),
-        pngOut: byId('out-png'),
-        outputHint: byId('output-hint')
+        jpegQuality: byId('jpeg_quality')
     };
 
     var ctx = el.canvas.getContext('2d');
@@ -185,35 +182,17 @@
         el.jpegTimes.disabled = !on;
         el.jpegQuality.disabled = !on;
         el.unlock.disabled = !on;
-        el.jpegOut.disabled = !on;
-        el.pngOut.disabled = !on;
-    }
-
-    /* The format the export will use. PNG is offered only while no JPEG pass
-     * runs: a JPEG encode has no alpha channel, so one pass through it turns
-     * every pixel opaque and there would be no transparency left to keep. */
-    function pngSelected() {
-        return !!(el.pngOut && el.pngOut.checked);
     }
 
     function syncPanels() {
         var bulgeOn = el.unlock.checked && state.loaded;
-        var crush = el.jpegBefore.checked || el.jpegAfter.checked;
-
-        /* A crush pass and PNG cannot both be true. Rather than saving an
-         * opaque PNG under a label that promises transparency, the format
-         * falls back to JPEG, and the hint says why. */
-        if (crush && el.pngOut.checked) el.jpegOut.checked = true;
 
         el.bulgeOpts.hidden = !el.unlock.checked;
-        el.jpegOpts.hidden = !crush;
+        el.jpegOpts.hidden = !(el.jpegBefore.checked || el.jpegAfter.checked);
         el.nubs.hidden = !bulgeOn;
         el.strength.disabled = !bulgeOn;
         el.radius.disabled = !bulgeOn;
         el.addNub.disabled = !bulgeOn;
-        el.jpegOut.disabled = !state.loaded;
-        el.pngOut.disabled = !state.loaded || crush;
-        el.outputHint.hidden = !crush;
     }
 
     /* ------------------------------------------------------------ host bridge */
@@ -285,10 +264,6 @@
                     strength);
             }
             out.update();
-            /* The fx canvas holds the whole pinched frame. In PNG mode the
-             * canvas is cleared first so its transparent areas stay
-             * transparent instead of compositing over the old render. */
-            if (pngSelected()) ctx.clearRect(0, 0, el.canvas.width, el.canvas.height);
             ctx.drawImage(canvasFx, 0, 0);
         } catch (err) {
             fxBroken = true;
@@ -318,7 +293,6 @@
         state.previewing = true;
         syncExportState();
 
-        if (pngSelected()) ctx.clearRect(0, 0, el.canvas.width, el.canvas.height);
         ctx.drawImage(state.image, 0, 0, el.canvas.width, el.canvas.height);
         bulge();
 
@@ -490,15 +464,6 @@
         });
     }
 
-    /* The pristine source, in the format the user will export. JPEG keeps the
-     * original encode exactly; PNG exists so the filters can start from pixels
-     * that still have an alpha channel. */
-    function encodeSource() {
-        return pngSelected()
-            ? el.canvas.toDataURL('image/png')
-            : el.canvas.toDataURL('image/jpeg');
-    }
-
     function createRenderJob() {
         state.token += 1;
         return {
@@ -530,9 +495,7 @@
         job.left = crushThisPass ? job.repetitions : 0;
 
         if (job.pass > 0) {
-            await loadInto(job.image, pngSelected()
-                ? el.canvas.toDataURL('image/png')
-                : el.canvas.toDataURL('image/jpeg'));
+            await loadInto(job.image, el.canvas.toDataURL('image/jpeg'));
             job.check();
         }
 
@@ -544,9 +507,6 @@
         job.check();
 
         var image = job.image;
-        /* PNG mode clears first: compositing a transparent frame over the
-         * previous render would leave that render's pixels showing through. */
-        if (pngSelected()) ctx.clearRect(0, 0, el.canvas.width, el.canvas.height);
         ctx.drawImage(image, 0, 0, image.width, image.height, 0, 0, image.width, image.height);
         ctx.drawImage(image, 0, 0, image.width, 2, 0, -1, image.width, 2);
         ctx.drawImage(image, 0, image.height - 2, image.width, 1, 0, image.height - 1, image.width, 1);
@@ -765,7 +725,7 @@
             el.canvas.removeAttribute('data-caman-id');
             ctx.clearRect(0, 0, el.canvas.width, el.canvas.height);
             ctx.drawImage(loaded, 0, 0, el.canvas.width, el.canvas.height);
-            state.sourceUrl = encodeSource();
+            state.sourceUrl = el.canvas.toDataURL('image/jpeg');
 
             /* CamanJS renders once on construction; the pipeline starts from its
              * callback so the two never write to the canvas at the same time. */
@@ -817,32 +777,6 @@
         } else {
             setStatus('Rendering');
         }
-    }
-
-    /* Rebuilds the pristine source in the chosen output format. The pipeline
-     * reloads that source for every render, so a source encoded as JPEG has no
-     * alpha left to export. Redrawing it replaces whatever the canvas held, so
-     * the export locks until the new render finishes — the same contract a load
-     * follows, and the previous render is abandoned by the token bump. */
-    function reencodeSource() {
-        if (!state.loaded || !state.image) return;
-
-        state.hasRendered = false;
-        state.token += 1;
-        syncExportState();
-
-        try {
-            ctx.clearRect(0, 0, el.canvas.width, el.canvas.height);
-            ctx.drawImage(state.image, 0, 0, el.canvas.width, el.canvas.height);
-            state.sourceUrl = encodeSource();
-        } catch (err) {
-            if (window.console) console.error(err);
-            state.sourceUrl = null;
-            setStatus('Could not prepare that image: ' + messageOf(err), 'error');
-            return;
-        }
-
-        requestRender();
     }
 
     function describeImage(image, canvas) {
@@ -922,19 +856,15 @@
         if (!state.loaded) return;
         if (!requireFinalCanvas()) return;
 
-        var png = pngSelected();
-        var dataUrl = png
-            ? el.canvas.toDataURL('image/png')
-            : el.canvas.toDataURL('image/jpeg', exportQuality());
-        var mime = png ? 'image/png' : 'image/jpeg';
-        var name = 'deepfried_' + Math.floor(Date.now()) + (png ? '.png' : '.jpg');
+        var dataUrl = el.canvas.toDataURL('image/jpeg', exportQuality());
+        var name = 'deepfried_' + Math.floor(Date.now()) + '.jpg';
         var host = hostBridge();
 
         if (host) {
             setStatus('Choose where to save…');
             host.saveImage({
                 dataUrl: dataUrl,
-                mime: mime,
+                mime: 'image/jpeg',
                 suggestedName: name,
                 title: 'Save deep-fried image'
             }).then(function (result) {
@@ -954,7 +884,7 @@
         var bytes = new Uint8Array(binary.length);
         for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
 
-        var url = URL.createObjectURL(new Blob([bytes], { type: mime }));
+        var url = URL.createObjectURL(new Blob([bytes], { type: 'image/jpeg' }));
         var link = document.createElement('a');
         link.href = url;
         link.download = name;
@@ -1141,20 +1071,8 @@
 
         [el.jpegBefore, el.jpegAfter].forEach(function (box) {
             box.addEventListener('change', function () {
-                var wasPng = pngSelected();
                 syncPanels();
-                /* Turning a crush on takes PNG away. The source still has to
-                 * go back to a JPEG encode, so the passes start from the same
-                 * pixels a fresh load would give them. */
-                if (wasPng && !pngSelected()) reencodeSource();
-                else requestRender();
-            });
-        });
-
-        [el.jpegOut, el.pngOut].forEach(function (radio) {
-            radio.addEventListener('change', function () {
-                syncPanels();
-                reencodeSource();
+                requestRender();
             });
         });
 

@@ -7,19 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.1.1]
 
-The icon change plus an optional transparent PNG output. The host, the crush
-pipeline, the bridge contract and the packaging are those of 0.1.0.
-
-### Added
-
-- A PNG output, offered when both JPEG options are off. The pipeline then keeps
-  the source's alpha through the filters and the bulge, and the file handed to
-  the host is a real PNG: the headless suite decodes it and checks the exported
-  alphas. JPEG returns without a change, and its bytes are compared against the
-  pre-change script.
-- PNG is disabled while a JPEG crush pass runs, because a JPEG encode has no
-  alpha channel: saving an opaque PNG under a "transparency" label would be a
-  lie. The control says why instead.
+The icon change only: the host, the processing pipeline, the bridge contract and
+the packaging are those of 0.1.0.
 
 ### Changed
 

@@ -125,38 +125,6 @@ export const PROBE = `(() => {
     return true;
   };
 
-  /* The host is a separate process, so the test stands in for it at the one
-   * place the app can observe: the payload handed to saveImage. Capturing that
-   * payload is the contract boundary, not a mock of the export: the page still
-   * builds and encodes its own file. */
-  t.saves = [];
-  t.installHost = function () {
-    t.saves.length = 0;
-    window.fryerHost = {
-      available: true,
-      saveImage: function (payload) {
-        t.saves.push({
-          dataUrl: payload.dataUrl,
-          mime: payload.mime,
-          suggestedName: payload.suggestedName
-        });
-        return Promise.resolve({
-          path: 'C:\\\\exports\\\\' + payload.suggestedName,
-          size: 0,
-          mime: payload.mime
-        });
-      },
-      copyImage: function () { return Promise.resolve({ ok: true }); },
-      openImage: function () { return Promise.resolve(null); },
-      hostInfo: function () { return Promise.resolve({}); }
-    };
-    window.dispatchEvent(new Event('fryerhostready'));
-    return true;
-  };
-  t.lastSave = function () {
-    return JSON.stringify(t.saves.length ? t.saves[t.saves.length - 1] : null);
-  };
-
   t.controls = function () {
     return JSON.stringify({
       save: document.getElementById('dl-btn').disabled,

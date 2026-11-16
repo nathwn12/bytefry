@@ -33,11 +33,10 @@ Editing happens in the window, on your machine. The page declares `connect-src '
 1. Open an image: `Ctrl+O`, paste one with `Ctrl+V`, or drop a file on the stage.
 2. Set the filters. Brightness, contrast, sharpen, saturation and noise each re-render on release.
 3. Choose where the JPEG crush runs: before the filters, after them, or both. Repetitions default to 28 at quality 0.175.
-4. Choose the output: **JPEG**, or **PNG (transparency)** when both JPEG options are off. A transparent source keeps its alpha only in PNG.
-5. Enable bulge, then click the image to add a point and drag it to move. Global strength and radius apply to every point.
-6. Save with `Ctrl+S`, or copy the result to the clipboard.
+4. Enable bulge, then click the image to add a point and drag it to move. Global strength and radius apply to every point.
+5. Save with `Ctrl+S`, or copy the result to the clipboard.
 
-The working canvas is capped at 800 px wide. The JPEG export is 0.8 quality unless "after filters" is on, in which case it uses the quality slider. PNG is lossless and is offered only with both JPEG options off, because one JPEG recompression makes every pixel opaque.
+The working canvas is capped at 800 px wide. The export is JPEG at 0.8 quality unless "after filters" is on, in which case it uses the quality slider.
 
 | Keys | Action |
 |---|---|
@@ -51,7 +50,6 @@ The working canvas is capped at 800 px wide. The JPEG export is 0.8 quality unle
 ## What you get
 
 - **The original pipeline, in the original order.** Optional JPEG crush, the glfx bulge pinch over those pixels, CamanJS filters, optional JPEG crush again. The constants, the 800 px cap and the per-pass quality jitter come from the upstream project unchanged.
-- **Transparent PNG when the crush is off.** With both JPEG options off, the output switches to PNG and the source's alpha survives the filters and the bulge, so a cut-out stays a cut-out. JPEG has no alpha channel, so while a crush pass runs the PNG option is refused and the export stays the JPEG it always was.
 - **A rebuilt interface.** The page is plain HTML, CSS and JavaScript with no jQuery, no analytics, no ads and no service worker; the layout is a dark workbench with the stage on the left and grouped controls on the right.
 - **Export you cannot trip.** Save, Copy and `Ctrl+S` refuse while a render is running or a point is being dragged, because the canvas is exportable only when it holds a finished render. A drag paints a preview, and the preview is never encoded.
 - **Everything local.** The host maps one folder to one virtual origin, denies CORS and cancels anything that would leave it; the page cannot open a connection and runs no analytics. Both the render and the encode happen in the window, with no service on the other end.
@@ -84,7 +82,7 @@ pwsh -File desktop/test.ps1                 # window-free suite: bridge, injecte
 pwsh -File desktop/build.ps1 -Verify        # the same build plus the off-screen self-check
 pwsh -File desktop/run-dev.ps1              # Debug host against the source app/
 node tests/run.mjs                          # web-layer suite in headless Chrome, no window
-node tests/run.mjs export-lock              # one test by name: drop-safety, load-parity, export-lock, export-failure, transparency
+node tests/run.mjs export-lock              # one test by name: drop-safety, load-parity, export-lock
 node tests/bench.mjs                        # optional: reports where a load spends its time; never a gate
 .\Bytefry.exe --help                        # usage, exit 0
 .\Bytefry.exe --selfcheck .\report.json     # exit 0 only when the report exists, parses and passed
@@ -112,7 +110,6 @@ The icon is one vector source, `assets/icon.svg`, shown at the top of this page 
 - The first launch of the single-file build is slower than later ones: the native WebView2 loader is extracted into the .NET single-file cache on first run.
 - The automated suite is window-free. How the rendered pixels look, and how the native Open and Save dialogs draw, need a human look.
 - The executable without `app\` shows an error dialog and exits 2.
-- Transparency is PNG-only. Any JPEG crush pass flattens alpha, so the PNG option is unavailable while one is on; a JPEG source has no transparency to keep.
 
 ## Status
 

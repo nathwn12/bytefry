@@ -5,18 +5,12 @@ repository's release page for the actual publication status and assets.
 
 ## Bytefry 0.1.1
 
-The 0.1.0 application with a redesigned icon and an optional transparent PNG output. Deep-fry an
-image in a Windows window: repeat-JPEG crush, a WebGL bulge and five filters, all running on your
-machine, then save as JPEG, or as a transparent PNG when no JPEG pass is used. Still no analytics,
+The 0.1.0 application with a redesigned icon. Deep-fry an image in a Windows window: repeat-JPEG
+crush, a WebGL bulge and five filters, all running on your machine, then save. Still no analytics,
 no account and no updater of its own.
 
 ## What changed since 0.1.0
 
-- **Transparent PNG output.** An `Output` group offers JPEG (the default, unchanged) and PNG
-  (transparency). PNG is available only with both JPEG options off, because one recompression pass
-  makes every pixel opaque; it keeps the source's alpha through the CamanJS filters and the glfx
-  bulge, and the saved file is a real PNG the host writes with a `.png` name. While a crush pass is
-  on, the PNG chip is disabled and a hint says why.
 - The icon is a transparent Bytefry mark drawn from one vector source, `assets/icon.svg`: the
   background is whatever the icon sits on, not a ground baked into the image. The README shows the
   same file.
@@ -25,7 +19,7 @@ no account and no updater of its own.
   the lock with the files, so the icon checks stay red without Python when either side moves alone.
 - `Assets/icon-source.png`, the opaque bitmap the previous icon was traced from, is gone.
 
-Nothing else moved: the pipeline and its order, the 800 px working cap, the JPEG export rules, the
+Nothing else moved: the pipeline and its order, the 800 px working cap, the export rules, the
 per-user installer, the portable layout, the bridge contract v1 and the GPL-3.0-only licence are the
 ones shipped in 0.1.0.
 
@@ -36,8 +30,7 @@ ones shipped in 0.1.0.
   it.
 - The upstream processing pipeline in its original order: optional JPEG crush, the glfx bulge pinch,
   CamanJS brightness/contrast/sharpen/saturation/noise, optional second JPEG crush. Working width
-  800 px; export JPEG at 0.8, or the quality slider when "after filters" is on, or a transparent PNG
-  when both JPEG options are off.
+  800 px; export JPEG at 0.8, or the quality slider when "after filters" is on.
 - A rebuilt interface with no jQuery, analytics, ads or service worker, and an in-app licence dialog.
 - A single-file portable build, or a per-user installer that needs no elevation. One `.ico` feeds the
   executable, the window and the setup file.
@@ -147,8 +140,6 @@ the run recorded against the tagged commit, and quote none of them in the releas
 - The executable needs its `app\` folder: without it the app shows an error and exits 2.
 - The bulge is WebGL. Where it is unavailable the control disables itself and the status line says so,
   rather than rendering something different.
-- Transparency is PNG-only: one JPEG recompression pass makes every pixel opaque, so the PNG output is
-  offered only with both JPEG options off. A JPEG source carries no alpha to keep.
 - An upgraded install reuses the previous directory and overwrites the payload, so a superseded
   `MemeFryer.exe` can be left beside `Bytefry.exe`; deleting it by hand is safe.
 

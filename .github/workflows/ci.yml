@@ -78,13 +78,12 @@ jobs:
         shell: pwsh
         run: pwsh -NoProfile -File desktop/test.ps1 -Configuration Release
 
-      # Deterministic gates only, with no wall-clock assertion anywhere: drop safety,
-      # load parity, the export lock, failure handling and transparent PNG output,
-      # so a busy runner cannot turn this red. The suite serves app/ on loopback and
-      # drives a browser with `--headless=new`, a throwaway profile and stdio ignored,
-      # so no window is created. Speed is measured separately by `node tests/bench.mjs`:
-      # opt-in, numbers only, and it fails solely on a byte-parity divergence, which
-      # this suite already gates.
+      # Deterministic gates only: drop-safety and load-parity, with no wall-clock
+      # assertion anywhere, so a busy runner cannot turn this red. The suite serves
+      # app/ on loopback and drives a browser with `--headless=new`, a throwaway
+      # profile and stdio ignored, so no window is created. Speed is measured
+      # separately by `node tests/bench.mjs`: opt-in, numbers only, and it fails
+      # solely on a byte-parity divergence, which this suite already gates.
       #
       # Browser discovery is a fixed candidate list: FRYER_CHROME, then Chrome
       # under Program Files, then Program Files (x86), then Brave Nightly, then
