@@ -14,7 +14,7 @@
          display name are all Bytefry. -->
     <AssemblyName>Bytefry</AssemblyName>
     <RootNamespace>MemeFryer.Desktop</RootNamespace>
-    <Version>0.1.0</Version>
+    <Version>0.1.1</Version>
     <Product>Bytefry</Product>
     <AssemblyTitle>Bytefry</AssemblyTitle>
     <Company>nathwn12</Company>

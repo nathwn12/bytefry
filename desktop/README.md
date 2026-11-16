@@ -10,7 +10,7 @@ the build copies it into the distributable.
 
 | | |
 |---|---|
-| Host version | 0.1.0 (`MemeFryer.Desktop.csproj`); the executable is `Bytefry.exe` |
+| Host version | 0.1.1 (`MemeFryer.Desktop.csproj`); the executable is `Bytefry.exe` |
 | Target | `net10.0-windows`, WinForms, x64 |
 | Embedded engine | `Microsoft.Web.WebView2` 1.0.4314.35 (NuGet, pinned) |
 | Runtime requirement | Microsoft Edge WebView2 Runtime (present on Windows 11; `157.0.4341.46` on the build machine) |
@@ -51,7 +51,7 @@ pwsh -File desktop/test.ps1
 # portable build: dist\portable\Bytefry.exe + dist\portable\app\  (self-contained, single file)
 pwsh -File desktop/build.ps1
 
-# installer as well: dist\installer\Bytefry-0.1.0-setup.exe
+# installer as well: dist\installer\Bytefry-0.1.1-setup.exe
 pwsh -File desktop/build.ps1 -Installer
 
 # smaller exe that needs the .NET 10 Desktop Runtime installed
