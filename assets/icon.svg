@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+<!--
+  Bytefry: a flame in the app's own palette, on nothing. Everything outside the two shapes is
+  fully transparent, so the mark sits on the taskbar, on a white README and on a dark one with no
+  plate behind it. There is no monitor, no ground and no baked background.
+
+  Colours are the window's tokens (app/styles.css): the violet family #6d28d9 / #7c3aed / #a78bfa
+  for the flame, the cyan family #0e7490 / #22d3ee / #a5f3ff for the molten base it stands in, and
+  the warm token #f87171 as the one square pixel. Every fill is a gradient, every edge is a curve
+  or a square: nothing is a photograph, and no image model drew it.
+
+  The two paths share their boundary exactly: the flame's lower edge is the melt's upper edge, so
+  the seam is one line, not two shapes that nearly meet.
+
+  `data-min-px` keeps an element out of frames below that pixel size; only the pixel does, because
+  at 48 px it is under three pixels wide and reads as a smudge against the melt rather than as a
+  square. This file is the only source of the mark: the README shows
+  it, and `desktop/MemeFryer.Desktop/Assets/make-icon.py` rasterises it into MemeFryer.ico at 16,
+  24, 32, 48, 64, 128 and 256 px.
+-->
+<defs>
+  <linearGradient id="flame" gradientUnits="userSpaceOnUse" x1="70" y1="246" x2="196" y2="8">
+    <stop offset="0" stop-color="#6d28d9" />
+    <stop offset="0.45" stop-color="#7c3aed" />
+    <stop offset="1" stop-color="#a78bfa" />
+  </linearGradient>
+  <linearGradient id="melt" gradientUnits="userSpaceOnUse" x1="0" y1="250" x2="0" y2="196">
+    <stop offset="0" stop-color="#0e7490" />
+    <stop offset="0.5" stop-color="#22d3ee" />
+    <stop offset="1" stop-color="#a5f3ff" />
+  </linearGradient>
+</defs>
+
+<!-- the flame: a tall tongue leaning right, a shorter one on the left, one cleft between them -->
+<path fill="url(#flame)" d="
+  M 152.64 4
+  C 184.00 40 206.40 96 208.64 150
+  C 213.12 172 208.64 194 201.92 208
+  C 154.88 222 101.12 204 49.60 208
+  C 40.64 170 42.88 112 63.04 82
+  C 80.96 104 89.92 132 103.36 148
+  C 123.52 112 139.20 54 152.64 4
+  Z" />
+
+<!-- the melt: the same flame closing under its own split line, so the two edges are one -->
+<path fill="url(#melt)" d="
+  M 49.60 208
+  C 101.12 204 154.88 222 201.92 208
+  C 199.68 226 186.24 236 168.32 240
+  C 150.40 252 116.80 250 96.64 242
+  C 78.72 242 54.08 228 49.60 208
+  Z" />
+
+<!-- the byte: one square pixel left in the melt -->
+<rect x="107.84" y="220" width="15.68" height="14" fill="#f87171" data-min-px="64" />
+</svg>
