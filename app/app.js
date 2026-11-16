@@ -499,6 +499,16 @@
             : el.canvas.toDataURL('image/jpeg');
     }
 
+    /* Blanks the visible part of a destination rectangle, so a PNG-mode draw
+     * onto it lands at its own alpha instead of compositing with what is
+     * already there. Only used for the edge smear, whose destination can start
+     * above the canvas. */
+    function blankRows(dy, dh) {
+        var top = Math.max(0, dy);
+        var bottom = Math.min(el.canvas.height, dy + dh);
+        if (bottom > top) ctx.clearRect(0, top, el.canvas.width, bottom - top);
+    }
+
     function createRenderJob() {
         state.token += 1;
         return {
@@ -544,11 +554,22 @@
         job.check();
 
         var image = job.image;
-        /* PNG mode clears first: compositing a transparent frame over the
-         * previous render would leave that render's pixels showing through. */
-        if (pngSelected()) ctx.clearRect(0, 0, el.canvas.width, el.canvas.height);
+        /* The pipeline draws the top two rows shifted up one pixel and the
+         * bottom row one pixel lower, on every pass. On opaque pixels that is
+         * only the upstream smear. Over a semi-transparent row a source-over
+         * draw would raise that row's alpha and blend two rows together, and
+         * each pass would compound it. PNG mode therefore blanks the rows a
+         * smear is about to cover and draws onto transparency: same geometry,
+         * the source's alpha. */
+        var keepAlpha = pngSelected();
+
+        if (keepAlpha) ctx.clearRect(0, 0, el.canvas.width, el.canvas.height);
         ctx.drawImage(image, 0, 0, image.width, image.height, 0, 0, image.width, image.height);
+
+        if (keepAlpha) blankRows(-1, 2);
         ctx.drawImage(image, 0, 0, image.width, 2, 0, -1, image.width, 2);
+
+        if (keepAlpha) blankRows(image.height - 1, 1);
         ctx.drawImage(image, 0, image.height - 2, image.width, 1, 0, image.height - 1, image.width, 1);
 
         if (job.left > 0) {
