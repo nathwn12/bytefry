@@ -15,9 +15,8 @@ no account and no updater of its own.
 - **Transparent PNG output.** An `Output` group offers JPEG (the default, unchanged) and PNG
   (transparency). PNG is available only with both JPEG options off, because one recompression pass
   makes every pixel opaque; it keeps the source's alpha through the CamanJS filters and the glfx
-  bulge, and the saved file is a real PNG the host writes with a `.png` name. The edge rows the
-  pipeline smears are replaced, not composited, so a half-transparent edge keeps its alpha. While a
-  crush pass is on, the PNG chip is disabled and a hint says why.
+  bulge, and the saved file is a real PNG the host writes with a `.png` name. While a crush pass is
+  on, the PNG chip is disabled and a hint says why.
 - The icon is a transparent Bytefry mark drawn from one vector source, `assets/icon.svg`: the
   background is whatever the icon sits on, not a ground baked into the image. The README shows the
   same file.
