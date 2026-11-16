@@ -35,26 +35,24 @@ function chunk(type, data) {
     return Buffer.concat([head, data, crc]);
 }
 
-/** An 8-bit, truecolour, non-interlaced PNG of a deterministic pattern. */
-export function encodePng(width, height, pixel) {
+/** An 8-bit, non-interlaced PNG of a deterministic pattern. */
+function encodePngChannels(width, height, channels, pixel) {
     const ihdr = Buffer.alloc(13);
     ihdr.writeUInt32BE(width, 0);
     ihdr.writeUInt32BE(height, 4);
-    ihdr[8] = 8;   // bit depth
-    ihdr[9] = 2;   // colour type: truecolour
-    ihdr[10] = 0;  // deflate
-    ihdr[11] = 0;  // adaptive filtering
-    ihdr[12] = 0;  // no interlace
+    ihdr[8] = 8;                              // bit depth
+    ihdr[9] = channels === 4 ? 6 : 2;         // colour type: truecolour, with or without alpha
+    ihdr[10] = 0;                             // deflate
+    ihdr[11] = 0;                             // adaptive filtering
+    ihdr[12] = 0;                             // no interlace
 
-    const raw = Buffer.alloc((width * 3 + 1) * height);
+    const raw = Buffer.alloc((width * channels + 1) * height);
     let offset = 0;
     for (let y = 0; y < height; y++) {
         raw[offset++] = 0; // filter: none
         for (let x = 0; x < width; x++) {
-            const [r, g, b] = pixel(x, y);
-            raw[offset++] = r;
-            raw[offset++] = g;
-            raw[offset++] = b;
+            const values = pixel(x, y);
+            for (let c = 0; c < channels; c++) raw[offset++] = values[c];
         }
     }
 
@@ -64,6 +62,16 @@ export function encodePng(width, height, pixel) {
         chunk('IDAT', deflateSync(raw, { level: 6 })),
         chunk('IEND', Buffer.alloc(0))
     ]);
+}
+
+/** An opaque 8-bit truecolour PNG. */
+export function encodePng(width, height, pixel) {
+    return encodePngChannels(width, height, 3, pixel);
+}
+
+/** The same writer with an alpha channel: pixel returns [r, g, b, a]. */
+export function encodePngRgba(width, height, pixel) {
+    return encodePngChannels(width, height, 4, pixel);
 }
 
 /** Same picture at any size: a diagonal gradient with seeded discs over it. */

@@ -19,7 +19,7 @@ import { pathToFileURL } from 'node:url';
 import { join } from 'node:path';
 import { createHarness, testsRoot } from './lib/harness.mjs';
 
-const TESTS = ['drop-safety', 'load-parity', 'export-lock', 'export-failure'];
+const TESTS = ['drop-safety', 'load-parity', 'export-lock', 'export-failure', 'transparency'];
 
 const only = process.argv[2];
 const selected = only ? TESTS.filter(name => name === only) : TESTS;

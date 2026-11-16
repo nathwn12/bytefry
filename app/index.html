@@ -141,6 +141,20 @@
                 </section>
 
                 <section class="group">
+                    <h2 class="group-title">Output</h2>
+
+                    <div class="chip-row" role="radiogroup" aria-label="Save format">
+                        <label class="chip"><input type="radio" name="output-format" id="out-jpeg" value="jpeg"
+                                checked disabled><span>JPEG</span></label>
+                        <label class="chip"><input type="radio" name="output-format" id="out-png" value="png"
+                                disabled><span>PNG (transparency)</span></label>
+                    </div>
+
+                    <p class="hint" id="output-hint" hidden>JPEG recompression has no alpha channel: one pass
+                        makes every pixel opaque. Turn both JPEG options off to save a transparent PNG.</p>
+                </section>
+
+                <section class="group">
                     <h2 class="group-title">Bulge</h2>
 
                     <div class="chip-row">

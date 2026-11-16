@@ -96,6 +96,15 @@ Additions (no original behaviour removed):
     being dragged or nudged, and a preview that arrives mid-render is painted
     only after the render has finished. Output of a completed render is
     unchanged.
+16. **The output can be a transparent PNG.** With both JPEG options off, the
+    pristine source is encoded as PNG instead of JPEG, the pass handoff and the
+    save use PNG, and the canvas is cleared before each full-frame draw so a
+    transparent source is not composited over the previous render. The filters
+    and the bulge then run exactly as they do for JPEG and keep the source's
+    alpha. While a JPEG pass runs the PNG output is unavailable: a JPEG encode
+    has no alpha channel and would flatten the image, so the control says so
+    instead of saving an opaque file under a transparency label. The default
+    JPEG pipeline, its constants and its output are unchanged.
 
 ## Kept deliberately
 

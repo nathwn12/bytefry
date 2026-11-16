@@ -24,7 +24,10 @@ Unchanged from the original, and the reason this app exists:
 4. optional JPEG crush **after** the filters
 
 Working width is capped at 800 px; the export is JPEG at 0.8 quality unless the
-"after filters" pass is on, in which case the quality slider value is used.
+"after filters" pass is on, in which case the quality slider value is used. With
+both JPEG options off the output is a lossless PNG instead, which is what keeps
+a transparent source transparent through the filters and the bulge. One JPEG
+pass has no alpha channel, so PNG is offered only while the crush is off.
 
 Export is only available when the canvas holds a finished render: a bulge drag
 shows a raw preview, and the export path refuses to read that preview.
