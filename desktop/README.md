@@ -29,7 +29,9 @@ desktop/
     SelfCheck.cs              off-screen verification, off-screen window, report writer
     AppPaths.cs               app folder, user-data folder, virtual host name
     app.manifest              per-monitor DPI, asInvoker, long paths
-    Assets/MemeFryer.ico      authored icon, 16-256 px (exe resource, window icon, installer)
+    Assets/MemeFryer.ico      generated icon, 16-256 px (exe resource, window icon, installer)
+    Assets/make-icon.py       rebuilds that .ico from assets/icon.svg; --check gates drift
+    Assets/icon.lock          sha256 of both files, compared by the suite with no Python
   tests/MemeFryer.Desktop.Tests/   window-free suite (bridge, script, packaging, CLI)
   installer/MemeFryer.iss     Inno Setup 6, per-user install, architecture from the build
   build.ps1                   publish + bundle app/ + NOTICE.md [+ installer] [+ off-screen check]
@@ -179,10 +181,15 @@ over:
 - The self-check writes its probe file under a name that cannot already exist
   (`selfcheck-write-<guid>.png`) and deletes only that file, so a run never removes or overwrites
   anything of the user's.
-- The icon is authored, not default: `Assets/MemeFryer.ico` carries 16, 24, 32, 48, 64, 128 and
-  256 px frames, and one file feeds the exe's Win32 resource, the window icon and the installer. What
-  is still missing is code signing, auto-update and an `AppUserModelID`, so SmartScreen will warn on a
-  fresh download until it is signed.
+- The icon is drawn, not default: `assets/icon.svg` is the one source, and
+  `Assets/make-icon.py` rasterises it into `Assets/MemeFryer.ico` at 16, 24, 32, 48, 64, 128 and
+  256 px. That one .ico feeds the exe's Win32 resource, the window icon and the installer, and the
+  README shows the same SVG, so the four cannot drift apart. Every build also writes
+  `Assets/icon.lock`, the sha256 of both files; the suite compares it with the files directly, so
+  editing the SVG or replacing the .ico without re-running the generator turns the icon checks red
+  on a machine with no Python at all. `--check` is the same comparison plus a full re-render. What
+  is still missing is code signing, auto-update and an `AppUserModelID`, so SmartScreen will warn on
+  a fresh download until it is signed.
 - The installer is per-user (`PrivilegesRequired=lowest`, `{localappdata}\Programs`), does not require
   elevation, and keeps its pre-rename `AppId` so an existing install upgrades in place. It writes no
   `[UninstallDelete]` entry: uninstalling leaves `%LOCALAPPDATA%\MemeFryer` (the WebView2 profile and

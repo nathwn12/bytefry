@@ -1133,6 +1133,249 @@ internal static class Program
             Runner.Require(build.Contains(@"/DIconFile=$iconFile", StringComparison.Ordinal),
                 "build.ps1 does not pass IconFile to ISCC");
         });
+
+        runner.Check("no frame paints a background: every corner and side is fully transparent", () =>
+        {
+            foreach (var frame in ReadIconFrames(iconPath))
+            {
+                var edge = frame.Size - 1;
+                var alpha = (int x, int y) => frame.Pixels[(y * frame.Size + x) * 4 + 3];
+
+                foreach (var (x, y, corner) in new[]
+                         {
+                             (0, 0, "top-left"), (edge, 0, "top-right"),
+                             (0, edge, "bottom-left"), (edge, edge, "bottom-right"),
+                             (frame.Size / 2, 0, "top"), (0, frame.Size / 2, "left"),
+                             (edge, frame.Size / 2, "right"),
+                         })
+                {
+                    Runner.RequireEqual(0, alpha(x, y),
+                        $"{frame.Size} px {corner} is not transparent, so a ground is baked into the frame");
+                }
+            }
+        });
+
+        runner.Check("each frame draws the mark at an icon-sized share of its pixels", () =>
+        {
+            foreach (var frame in ReadIconFrames(iconPath))
+            {
+                var covered = 0;
+                for (var index = 3; index < frame.Pixels.Length; index += 4)
+                {
+                    if (frame.Pixels[index] > 0) covered++;
+                }
+
+                var share = (double)covered / (frame.Size * frame.Size);
+                Runner.Require(share is > 0.30 and < 0.70,
+                    $"{frame.Size} px draws {share:P0} of its pixels: a clipped or an empty frame");
+            }
+        });
+
+        runner.Check("the 256 px frame is the app's violet and cyan, not another palette", () =>
+        {
+            var frame = ReadIconFrames(iconPath).Single(item => item.Size == 256);
+            int solid = 0, warm = 0, cool = 0;
+
+            for (var index = 0; index < frame.Pixels.Length; index += 4)
+            {
+                if (frame.Pixels[index + 3] < 200) continue;
+                solid++;
+                var red = frame.Pixels[index];
+                var blue = frame.Pixels[index + 2];
+                if (red > blue + 60) warm++;
+                if (blue > red + 60) cool++;
+            }
+
+            Runner.Require(solid > 256 * 256 / 4, $"only {solid} solid pixels at 256 px");
+            Runner.Require(warm * 20 < solid,
+                $"{warm} of {solid} solid pixels are warm: the mark does not hold to the app's cool palette");
+            Runner.Require(cool * 5 > solid * 4,
+                $"{cool} of {solid} solid pixels are cool, so the mark is not the violet-and-cyan art");
+        });
+
+        runner.Check("the README, the generator and the .ico name one vector source", () =>
+        {
+            var root = Path.GetFullPath(Path.Combine(desktopDir, ".."));
+            var svg = Path.Combine(root, "assets", "icon.svg");
+            Runner.Require(File.Exists(svg), "assets/icon.svg is missing: nothing to rebuild the icon from");
+
+            var art = File.ReadAllText(svg);
+            Runner.Require(art.Contains("<svg", StringComparison.Ordinal) && art.Contains("viewBox=", StringComparison.Ordinal),
+                "the icon source is not an svg document with a viewBox");
+
+            var readme = File.ReadAllText(Path.Combine(root, "README.md"));
+            Runner.Require(readme.Contains("src=\"assets/icon.svg\"", StringComparison.Ordinal),
+                "the README does not show the vector the .ico is built from");
+
+            var generator = File.ReadAllText(Path.Combine(assetDir, "make-icon.py"));
+            Runner.Require(generator.Contains("\"assets\" / \"icon.svg\"", StringComparison.Ordinal),
+                "make-icon.py does not read assets/icon.svg");
+            Runner.Require(!generator.Contains("icon-source", StringComparison.Ordinal),
+                "make-icon.py still reads the replaced raster master");
+            Runner.Require(!File.Exists(Path.Combine(assetDir, "icon-source.png")),
+                "the replaced raster master is still in the assets folder");
+        });
+
+        runner.Check("the .ico and the vector are the pair the generator recorded", () =>
+        {
+            var root = Path.GetFullPath(Path.Combine(desktopDir, ".."));
+            var svg = Path.Combine(root, "assets", "icon.svg");
+            var record = Path.Combine(assetDir, "icon.lock");
+
+            Runner.Require(File.Exists(record),
+                "icon.lock is missing: nothing binds the .ico to the vector on a machine without Python");
+
+            var recorded = new Dictionary<string, string>(StringComparer.Ordinal);
+            foreach (var line in File.ReadAllLines(record))
+            {
+                if (line.Trim().Length == 0 || line.TrimStart().StartsWith('#')) continue;
+                var parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                Runner.Require(parts.Length == 2 && parts[1].Length == 64,
+                    $"icon.lock holds a line that is not '<svg|ico> <sha256>': {line}");
+                recorded[parts[0]] = parts[1];
+            }
+
+            Runner.Require(recorded.ContainsKey("svg") && recorded.ContainsKey("ico"),
+                "icon.lock does not record both the svg and the ico");
+
+            // A digest of each file against the recorded one: neither may move alone, and neither
+            // needs Python, Pillow or numpy to be checked.
+            foreach (var (key, path) in new[] { ("svg", svg), ("ico", iconPath) })
+            {
+                var actual = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(path)));
+                Runner.RequireEqual(recorded[key], actual,
+                    $"{Path.GetFileName(path)} changed without re-running make-icon.py, so the icon and its source disagree");
+            }
+        });
+
+        var python = ResolvePython();
+        if (python is null || !PythonHasPillow(python, assetDir))
+        {
+            // The digest check above still guards the pair; this deeper one only re-renders.
+            runner.Skip("a fresh render of the vector still produces the committed .ico",
+                python is null ? "no python on PATH" : "python has no Pillow or numpy");
+        }
+        else
+        {
+            runner.Check("a fresh render of the vector still produces the committed .ico", () =>
+            {
+                var (code, output) = RunProcess(python, new[] { "make-icon.py", "--check" }, assetDir);
+                Runner.RequireEqual(0, code,
+                    $"make-icon.py --check exited {code}: {output.Trim()}");
+            });
+        }
+    }
+
+    private static IEnumerable<(int Size, byte[] Pixels)> ReadIconFrames(string path)
+    {
+        var bytes = File.ReadAllBytes(path);
+        var count = (int)BitConverter.ToUInt16(bytes, 4);
+
+        for (var index = 0; index < count; index++)
+        {
+            var entry = 6 + 16 * index;
+            var size = bytes[entry] == 0 ? 256 : bytes[entry];
+            var length = BitConverter.ToInt32(bytes, entry + 8);
+            var offset = BitConverter.ToInt32(bytes, entry + 12);
+            var payload = bytes.AsSpan(offset, length);
+
+            yield return (size, size >= 256 ? DecodePng(payload.ToArray()) : DecodeDib(payload, size));
+        }
+    }
+
+    /// <summary>Top-down RGBA of one 32-bit DIB frame: the stored rows run bottom-up, BGRA.</summary>
+    private static byte[] DecodeDib(ReadOnlySpan<byte> payload, int size)
+    {
+        var pixels = new byte[size * size * 4];
+        for (var y = 0; y < size; y++)
+        {
+            var row = 40 + (size - 1 - y) * size * 4;
+            for (var x = 0; x < size; x++)
+            {
+                var from = row + x * 4;
+                var to = (y * size + x) * 4;
+                pixels[to] = payload[from + 2];
+                pixels[to + 1] = payload[from + 1];
+                pixels[to + 2] = payload[from];
+                pixels[to + 3] = payload[from + 3];
+            }
+        }
+
+        return pixels;
+    }
+
+    private static byte[] DecodePng(byte[] payload)
+    {
+        using var stream = new MemoryStream(payload);
+        using var bitmap = new System.Drawing.Bitmap(stream);
+        var pixels = new byte[bitmap.Width * bitmap.Height * 4];
+
+        for (var y = 0; y < bitmap.Height; y++)
+        {
+            for (var x = 0; x < bitmap.Width; x++)
+            {
+                var colour = bitmap.GetPixel(x, y);
+                var at = (y * bitmap.Width + x) * 4;
+                pixels[at] = colour.R;
+                pixels[at + 1] = colour.G;
+                pixels[at + 2] = colour.B;
+                pixels[at + 3] = colour.A;
+            }
+        }
+
+        return pixels;
+    }
+
+    private static string? ResolvePython()
+    {
+        var path = Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
+        foreach (var directory in path.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries))
+        {
+            foreach (var name in new[] { "python.exe", "python3.exe" })
+            {
+                var candidate = Path.Combine(directory.Trim().Trim('"'), name);
+                if (File.Exists(candidate)) return candidate;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>True only when the interpreter can import what the generator needs.</summary>
+    private static bool PythonHasPillow(string python, string workDir)
+    {
+        try
+        {
+            var (code, _) = RunProcess(python, new[] { "-c", "import PIL, numpy" }, workDir);
+            return code == 0;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+
+    private static (int Code, string Output) RunProcess(string exe, string[] args, string workDir)
+    {
+        var start = new ProcessStartInfo(exe)
+        {
+            RedirectStandardError = true,
+            RedirectStandardOutput = true,
+            UseShellExecute = false,
+            WorkingDirectory = workDir,
+        };
+        foreach (var argument in args) start.ArgumentList.Add(argument);
+
+        using var process = Process.Start(start)
+            ?? throw new InvalidOperationException($"{Path.GetFileName(exe)} did not start");
+        var output = process.StandardOutput.ReadToEnd() + process.StandardError.ReadToEnd();
+        if (!process.WaitForExit(120_000))
+        {
+            try { process.Kill(entireProcessTree: true); } catch (InvalidOperationException) { }
+            throw new TimeoutException($"{Path.GetFileName(exe)} did not exit within 120s");
+        }
+
+        return (process.ExitCode, output);
     }
 
     private static readonly int[] IconSizes = [16, 24, 32, 48, 64, 128, 256];

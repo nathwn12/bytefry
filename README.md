@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="desktop/MemeFryer.Desktop/Assets/icon-source.png" width="120" height="120" alt="Bytefry icon" />
+  <img src="assets/icon.svg" width="120" height="120" alt="Bytefry icon" />
 </p>
 <h1 align="center">Bytefry</h1>
 <p align="center"><strong>Deep-fry an image in a Windows window: repeat-JPEG crush, a WebGL bulge and five filters, all running on your machine, then save.</strong></p>
@@ -77,6 +77,7 @@ Nothing is written to the registry, no service or scheduled task is installed, a
 ```powershell
 node third_party/camanjs/verify.mjs        # shipped CamanJS bytes are the pinned upstream artifact
 node third_party/glfx/verify.mjs           # the same for glfx.js, plus the source they came from
+python desktop/MemeFryer.Desktop/Assets/make-icon.py --check   # the .ico is a fresh build of assets/icon.svg
 pwsh -File desktop/test.ps1                 # window-free suite: bridge, injected script, packaging, CLI
 pwsh -File desktop/build.ps1 -Verify        # the same build plus the off-screen self-check
 pwsh -File desktop/run-dev.ps1              # Debug host against the source app/
@@ -86,6 +87,8 @@ node tests/bench.mjs                        # optional: reports where a load spe
 .\Bytefry.exe --help                        # usage, exit 0
 .\Bytefry.exe --selfcheck .\report.json     # exit 0 only when the report exists, parses and passed
 ```
+
+The icon is one vector source, `assets/icon.svg`, shown at the top of this page and rasterised into `desktop/MemeFryer.Desktop/Assets/MemeFryer.ico` by `make-icon.py` at 16, 24, 32, 48, 64, 128 and 256 px. Windows takes that one file three ways: the executable's Win32 icon resource, the window icon and the installer. `--check` compares the committed `.ico` with a fresh build and exits non-zero on any difference, and `--preview <dir>` writes every frame plus a light/dark contact sheet for a human to judge. It needs Python with Pillow and numpy; the rest of the build does not.
 
 `node tests/run.mjs` is the gate: correctness checks with no wall-clock assertions, so a busy machine cannot turn it red. `node tests/bench.mjs` is the measurement, opt-in and numbers only; it exits non-zero only if two scripts produce different bytes, and a timing difference is never a failure. The two `third_party/*/verify.mjs` scripts are offline too: they match the shipped `app/vendor/` files against the pinned upstream artifacts and check that the source kept beside them is the source those artifacts came from.
 
