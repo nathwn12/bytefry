@@ -15,9 +15,10 @@ no account and no updater of its own.
 - **Transparent PNG output.** An `Output` group offers JPEG (the default, unchanged) and PNG
   (transparency). PNG is available only with both JPEG options off, because one recompression pass
   makes every pixel opaque; it keeps the source's alpha through the CamanJS filters and the glfx
-  bulge, and the saved file is a real PNG the host writes with a `.png` name. The edge rows the
-  pipeline smears are replaced, not composited, so a half-transparent edge keeps its alpha. While a
-  crush pass is on, the PNG chip is disabled and a hint says why.
+  bulge, and the saved file is a real PNG the host writes with a `.png` name. PNG keeps every row's
+  own pixels and alpha: the JPEG-only edge smear is skipped, and the first and last row are restored
+  after the sharpen kernel, which never writes them, so a transparent border and a two-row image
+  both survive. While a crush pass is on, the PNG chip is disabled and a hint says why.
 - The icon is a transparent Bytefry mark drawn from one vector source, `assets/icon.svg`: the
   background is whatever the icon sits on, not a ground baked into the image. The README shows the
   same file.
@@ -150,6 +151,8 @@ the run recorded against the tagged commit, and quote none of them in the releas
   rather than rendering something different.
 - Transparency is PNG-only: one JPEG recompression pass makes every pixel opaque, so the PNG output is
   offered only with both JPEG options off. A JPEG source carries no alpha to keep.
+- With sharpen on, a PNG's first and last row are the pre-filter row: the vendored kernel does not
+  write them, and restoring the pixels is the only way to keep a border's own alpha.
 - An upgraded install reuses the previous directory and overwrites the payload, so a superseded
   `MemeFryer.exe` can be left beside `Bytefry.exe`; deleting it by hand is safe.
 
