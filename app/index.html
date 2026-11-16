@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="dark">
+    <!-- Offline guard: nothing in this app may open a network connection. Scripts, styles,
+         images and the host bridge are local (self) or data:/blob: only. -->
+    <meta http-equiv="Content-Security-Policy"
+        content="connect-src 'none'; form-action 'none'; object-src 'none'; base-uri 'none'">
+    <title>Bytefry</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <header class="topbar">
+        <h1 class="app-title">Bytefry</h1>
+        <div class="topbar-actions">
+            <button type="button" class="btn" id="open-btn" title="Open an image (Ctrl+O)">Open image</button>
+            <button type="button" class="btn" id="copy-btn" title="Copy the result to the clipboard"
+                hidden>Copy</button>
+            <button type="button" class="btn primary" id="dl-btn" title="Save the fried image (Ctrl+S)"
+                disabled>Save image</button>
+            <button type="button" class="btn ghost" id="about-btn" title="Licence and attribution">Licence</button>
+        </div>
+    </header>
+
+    <main class="workspace">
+        <section class="stage" id="stage">
+            <div class="stage-area" id="stage-area">
+                <div class="stage-empty" id="stage-empty">
+                    <div class="drop-target">
+                        <p class="empty-lead">Drag an image here</p>
+                        <p class="empty-keys">or press <kbd>Ctrl</kbd>+<kbd>O</kbd> to open,
+                            <kbd>Ctrl</kbd>+<kbd>V</kbd> to paste</p>
+                    </div>
+                    <p class="empty-note">Everything runs locally.</p>
+                </div>
+                <div class="frame" id="frame" hidden>
+                    <canvas id="canvas" role="img" tabindex="-1"
+                        aria-label="Processed image. Load an image to begin."></canvas>
+                    <div id="nubs" role="group" aria-label="Bulge points"></div>
+                </div>
+            </div>
+            <!-- Visual affordance only while a file is dragged over the stage with an image
+                 already loaded; the empty state says where to drop. aria-hidden: a drag is a
+                 pointer gesture and the stage already carries aria-busy. -->
+            <div class="drop-cue" aria-hidden="true"><span>Drop to open</span></div>
+            <div class="progress" id="progress" hidden aria-hidden="true"><span></span></div>
+        </section>
+
+        <aside class="sidebar" aria-label="Controls">
+            <!-- id "Filters" kept from the original markup: it is the control surface for both
+                 the filter values and the JPEG / bulge options.
+                 The <output> readouts repeat the value the slider already exposes, so each one
+                 carries aria-live="off": the numbers stay in reading order but stop announcing on
+                 every pointer move. Each group is an h2 section, not a landmark — one "Controls"
+                 region is enough to navigate by. -->
+            <div id="Filters">
+                <section class="group">
+                    <h2 class="group-title">Filters</h2>
+
+                    <div class="control">
+                        <div class="control-head">
+                            <label for="f-brightness">Brightness</label>
+                            <output aria-live="off" for="f-brightness">15</output>
+                        </div>
+                        <input type="range" id="f-brightness" min="-10" max="30" step="1" value="15"
+                            data-filter="brightness" disabled>
+                    </div>
+
+                    <div class="control">
+                        <div class="control-head">
+                            <label for="f-contrast">Contrast</label>
+                            <output aria-live="off" for="f-contrast">155</output>
+                        </div>
+                        <input type="range" id="f-contrast" min="0" max="300" step="1" value="155"
+                            data-filter="contrast" disabled>
+                    </div>
+
+                    <div class="control">
+                        <div class="control-head">
+                            <label for="f-sharpen">Sharpen</label>
+                            <output aria-live="off" for="f-sharpen">83</output>
+                        </div>
+                        <input type="range" id="f-sharpen" min="0" max="800" step="1" value="83"
+                            data-filter="sharpen" disabled>
+                    </div>
+
+                    <div class="control">
+                        <div class="control-head">
+                            <label for="f-saturation">Saturation</label>
+                            <output aria-live="off" for="f-saturation">0</output>
+                        </div>
+                        <input type="range" id="f-saturation" min="0" max="300" step="1" value="0"
+                            data-filter="saturation" disabled>
+                    </div>
+
+                    <div class="control">
+                        <div class="control-head">
+                            <label for="f-noise">Noise</label>
+                            <output aria-live="off" for="f-noise">18</output>
+                        </div>
+                        <input type="range" id="f-noise" min="0" max="100" step="1" value="18"
+                            data-filter="noise" disabled>
+                    </div>
+                </section>
+
+                <section class="group">
+                    <h2 class="group-title">JPEG</h2>
+
+                    <div class="control">
+                        <div class="control-head"><span class="control-label">Apply</span></div>
+                        <div class="chip-row">
+                            <label class="chip"><input type="checkbox" id="jpeg-before" disabled><span>Before
+                                    filters</span></label>
+                            <label class="chip"><input type="checkbox" id="jpeg-after" checked disabled><span>After
+                                    filters</span></label>
+                        </div>
+                    </div>
+
+                    <div id="jpeg_opts">
+                        <div class="control">
+                            <div class="control-head">
+                                <label for="jpeg_times">Repetitions</label>
+                                <output aria-live="off" for="jpeg_times">28</output>
+                            </div>
+                            <input type="range" id="jpeg_times" min="1" max="200" step="1" value="28" disabled>
+                        </div>
+
+                        <div class="control">
+                            <div class="control-head">
+                                <label for="jpeg_quality">Quality</label>
+                                <output aria-live="off" for="jpeg_quality">0.175</output>
+                            </div>
+                            <input type="range" id="jpeg_quality" min="0" max="0.5" step="0.025" value="0.175"
+                                disabled>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="group">
+                    <h2 class="group-title">Bulge</h2>
+
+                    <div class="chip-row">
+                        <label class="chip"><input type="checkbox" id="unlock-bulges" disabled><span>Enable
+                                bulge</span></label>
+                    </div>
+
+                    <div id="bulge_opts" hidden>
+                        <p class="hint" id="bulge_hint">
+                            Click the image to add a point. Drag it to move, click it to remove.
+                            With a point focused: arrow keys nudge, <kbd>Delete</kbd> removes.
+                        </p>
+
+                        <div class="control">
+                            <div class="control-head">
+                                <label for="global-str">Global strength</label>
+                                <output aria-live="off" for="global-str">0.7</output>
+                            </div>
+                            <input type="range" id="global-str" min="-1" max="1" step="0.05" value="0.7" disabled>
+                        </div>
+
+                        <div class="control">
+                            <div class="control-head">
+                                <label for="global-radius">Global radius</label>
+                                <output aria-live="off" for="global-radius">0.2</output>
+                            </div>
+                            <input type="range" id="global-radius" min="0" max="1" step="0.05" value="0.2"
+                                disabled>
+                        </div>
+
+                        <button type="button" class="btn wide" id="add-nub-btn" disabled>Add point at
+                            centre</button>
+                    </div>
+                </section>
+            </div>
+        </aside>
+    </main>
+
+    <footer class="statusbar">
+        <span class="status-line">
+            <span class="status-text" id="statustext" role="status" aria-live="polite">Ready</span>
+            <!-- Step counter: changes on every JPEG pass, so it stays out of the
+                 live region and out of the accessibility tree. -->
+            <span class="status-step" id="status-step" aria-hidden="true"></span>
+        </span>
+        <span class="meta" id="image-meta"></span>
+    </footer>
+
+    <input type="file" id="imageLoader" accept="image/*" hidden>
+
+    <dialog id="about" aria-labelledby="about-title">
+        <h2 id="about-title">Licence and attribution</h2>
+        <p>
+            <strong>Bytefry</strong> is a modified desktop build of <strong>Meme Deep Fryer</strong>, the
+            deep-fried meme generator by Dima (<a href="https://dmitry.lol" rel="noreferrer">dmitry.lol</a>), published at
+            <a href="https://deepfriedmemes.com" rel="noreferrer">deepfriedmemes.com</a> and
+            <a href="https://github.com/efskap/deepfriedmemes.com" rel="noreferrer">github.com/efskap/deepfriedmemes.com</a>.
+            The original is licensed under the GNU General Public License, version 3, and so is this
+            build (GPL-3.0-only).
+        </p>
+        <p>
+            The processing pipeline is the original one: optional repeated JPEG recompression, the
+            glfx bulge pinch, CamanJS filters, then optional repeated JPEG recompression again.
+            The interface was rebuilt for a desktop window; the website shell, community
+            links, analytics, advertising, service worker and absolute site paths were removed. The full licence
+            text ships as <code>LICENSE</code>; changes are itemised in <code>ATTRIBUTION.md</code>.
+        </p>
+        <p class="about-small">
+            Bundled: CamanJS (BSD-3-Clause, 2010 Ryan LeFevre) · glfx.js (MIT, 2011 Evan Wallace).
+            Full notices in <code>vendor/NOTICE</code>. No network requests are made by this app.
+        </p>
+        <div class="about-actions">
+            <button type="button" class="btn" id="about-close">Close</button>
+        </div>
+    </dialog>
+
+    <script src="vendor/caman.full.min.js"></script>
+    <script src="vendor/glfx.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>

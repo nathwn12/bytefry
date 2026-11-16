@@ -1,0 +1,16 @@
+# Explicit so a checkout is byte-identical to the repository whatever the
+# machine's core.autocrlf says. The tree is LF; the files named below are not.
+* text=auto eol=lf
+
+# The GPL text arrived from upstream with CRLF, and the root copy and the app
+# copy must stay byte-identical to each other.
+LICENSE text eol=crlf
+app/LICENSE text eol=crlf
+
+# Vendored upstream libraries keep their original bytes, CRLF included.
+app/vendor/** -text
+third_party/** -text
+
+# Binary assets are never normalized and never diffed as text.
+*.ico binary
+*.png binary

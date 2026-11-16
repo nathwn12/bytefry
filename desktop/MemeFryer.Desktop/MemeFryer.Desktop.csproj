@@ -1,0 +1,63 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+
+    <!-- The assembly name is the executable name the user sees: Bytefry.exe. The project folder,
+         RootNamespace and code namespace keep the pre-rename name, because nothing outside the
+         build reads them: the shipped exe, its version info, the window title and the installer
+         display name are all Bytefry. -->
+    <AssemblyName>Bytefry</AssemblyName>
+    <RootNamespace>MemeFryer.Desktop</RootNamespace>
+    <Version>0.1.0</Version>
+    <Product>Bytefry</Product>
+    <AssemblyTitle>Bytefry</AssemblyTitle>
+    <Company>nathwn12</Company>
+    <Copyright>GPL-3.0-only</Copyright>
+
+    <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- Win32 icon resource of Bytefry.exe: Assets/MemeFryer.ico, 16-256 px. The installer embeds
+         the same file (installer/MemeFryer.iss) and MainForm takes the window icon from it (AppIcon).
+         The asset filename is internal; the icon itself is what ships. -->
+    <ApplicationIcon>Assets\MemeFryer.ico</ApplicationIcon>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <EnableWindowsTargeting>false</EnableWindowsTargeting>
+    <DebugType Condition="'$(Configuration)' == 'Release'">none</DebugType>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <!-- The WebView2 package ships a WPF assembly whose WindowsBase 5.0 reference conflicts with the
+         net10.0 reference in a WinForms project. Nothing here loads WPF, so the binding conflict is noise. -->
+    <MSBuildWarningsAsMessages>$(MSBuildWarningsAsMessages);MSB3277</MSBuildWarningsAsMessages>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4314.35" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The window icon is that same .ico, embedded so Form.Icon does not depend on the exe's Win32
+         resource being readable from an arbitrary install location. -->
+    <EmbeddedResource Include="Assets\MemeFryer.ico" LogicalName="MemeFryer.Desktop.Assets.MemeFryer.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The window-free test suite drives the bridge and script directly. -->
+    <InternalsVisibleTo Include="MemeFryer.Desktop.Tests" />
+  </ItemGroup>
+
+  <!-- SDK API documentation ships in the package; it is not part of the runtime payload. -->
+  <Target Name="DropWebView2XmlDocs" AfterTargets="ComputeFilesToPublish">
+    <ItemGroup>
+      <ResolvedFileToPublish
+        Remove="@(ResolvedFileToPublish)"
+        Condition="'%(ResolvedFileToPublish.Extension)' == '.xml' and $([System.String]::Copy('%(ResolvedFileToPublish.Filename)').StartsWith('Microsoft.Web.WebView2'))" />
+    </ItemGroup>
+  </Target>
+
+</Project>

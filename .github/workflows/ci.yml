@@ -1,0 +1,103 @@
+# CI for Bytefry: a Windows-only desktop host (WinForms + WebView2) that serves a
+# dependency-free web layer from app/ beside the executable.
+#
+# No house ci/ template covers this stack (a .NET 10 WinForms host plus a
+# dependency-free Node test suite), so this is a project workflow shaped like the
+# house ones: same name, windows-latest, read-only token.
+#
+# Every step is headless-safe. The one check that needs a real window -
+# build.ps1 -Verify, which parks an off-screen WebView2 window to compose the app -
+# is NOT run here; the last step says so out loud.
+#
+# Order matters: the provenance checks run first because they need only Node and
+# fail in seconds; desktop/test.ps1 then drives dist/portable/Bytefry.exe when it
+# exists, so the publish runs before that suite, which tests the shipped
+# single-file binary rather than a framework-dependent apphost.
+#
+# COST RULE - GitHub Actions is FREE on public repos and METERED on private ones
+# (windows-latest bills at 2x per minute). Manual only while private; restore
+# push and pull_request triggers if the repository becomes public.
+name: ci
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      # The web-layer suite runs on Node and needs a global WebSocket, so Node 22
+      # or newer; lts/* satisfies that. No lockfile: app/ and tests/ ship no
+      # runtime dependencies.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+
+      # Bundled-source provenance: each script re-derives the shipped bundle from
+      # the vendored upstream tree beside it and fails on any drift - bytes, line
+      # endings, file count, and the registration/method surface the sources
+      # declare. Offline, dependency-free, read-only, seconds to run, and they
+      # need nothing but Node, so they gate before the publish.
+      #
+      # One command per step, on purpose. GitHub prepends
+      # `$ErrorActionPreference = 'stop'` to a pwsh step and appends
+      # `if ((Test-Path -LiteralPath variable:\LASTEXITCODE)) { exit $LASTEXITCODE }`,
+      # so a non-zero node exit fails the step. That wrapper reads only the LAST
+      # exit code, so two commands in one block let the first failure be masked
+      # (measured here: node exit 3 then node exit 0 leaves the block at 0).
+      - name: Verify bundled CamanJS source
+        shell: pwsh
+        run: node third_party/camanjs/verify.mjs
+
+      - name: Verify bundled glfx source
+        shell: pwsh
+        run: node third_party/glfx/verify.mjs
+
+      # Publish the portable folder: dist/portable/Bytefry.exe, self-contained and
+      # single-file, with app/ and NOTICE.md beside it. The installer (-Installer,
+      # Inno Setup 6) is a release artefact, not a per-push gate; the image does
+      # carry the Inno Setup compiler if that ever changes.
+      - name: Build the portable host
+        shell: pwsh
+        run: pwsh -NoProfile -File desktop/build.ps1 -Configuration Release
+
+      # Window-free: no Form, no WebView2, no message box. Covers app-folder
+      # resolution, the bridge host, the injected script, packaging invariants,
+      # the icon, the command line, and the self-check report gate.
+      - name: Test the host
+        shell: pwsh
+        run: pwsh -NoProfile -File desktop/test.ps1 -Configuration Release
+
+      # Deterministic gates only: drop-safety and load-parity, with no wall-clock
+      # assertion anywhere, so a busy runner cannot turn this red. The suite serves
+      # app/ on loopback and drives a browser with `--headless=new`, a throwaway
+      # profile and stdio ignored, so no window is created. Speed is measured
+      # separately by `node tests/bench.mjs`: opt-in, numbers only, and it fails
+      # solely on a byte-parity divergence, which this suite already gates.
+      #
+      # Browser discovery is a fixed candidate list: FRYER_CHROME, then Chrome
+      # under Program Files, then Program Files (x86), then Brave Nightly, then
+      # Edge under Program Files (x86) - where a 64-bit Windows keeps msedge.exe.
+      # windows-latest ships both Chrome and Edge, so no environment variable is
+      # needed; set FRYER_CHROME only if an image ever moves one of them.
+      - name: Test the web layer
+        shell: pwsh
+        run: node tests/run.mjs
+
+      - name: The off-screen self-check is not run here
+        shell: pwsh
+        run: |
+          Write-Host 'Skipped: build.ps1 -Verify parks a window outside every monitor for'
+          Write-Host 'WebView2 to compose the page. A hosted runner cannot be trusted to'
+          Write-Host 'compose it, so the check stays opt-in. Run it locally:'
+          Write-Host '  pwsh -File desktop/build.ps1 -Verify'

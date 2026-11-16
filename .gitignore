@@ -1,0 +1,24 @@
+# Build output: dotnet build/publish, the staged bundle, installers, MSBuild logs
+bin/
+obj/
+/desktop/dist/
+*.binlog
+
+# Visual Studio / Rider artefacts
+.vs/
+*.user
+*.suo
+
+# Signing material and local environment: never committed
+*.pfx
+.env
+
+# Package and interpreter caches (the app lane ships no runtime dependencies)
+node_modules/
+__pycache__/
+*.pyc
+
+# OS noise
+Thumbs.db
+desktop.ini
+.DS_Store

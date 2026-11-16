@@ -1,0 +1,707 @@
+/*
+ * Bytefry — desktop workbench styles.
+ * A modified desktop build of Meme Deep Fryer (efskap/deepfriedmemes.com,
+ * Copyright (C) Dima and contributors, GPL-3.0-only).
+ * Dark slate surface, violet primary and cyan secondary accents, square
+ * corners, hairline rules.
+ */
+
+:root {
+    color-scheme: dark;
+
+    --bg: #080b0f;
+    --panel: #0e131a;
+    --panel-raised: #131b24;
+    --line: #1d2732;
+    --line-strong: #2a3846;
+    --text: #e7eef7;
+    --text-dim: #97a7ba;
+    --text-faint: #8496a9;
+    --violet: #a78bfa;
+    --violet-deep: #7c3aed;
+    --violet-glow: rgba(124, 58, 237, 0.45);
+    --cyan: #22d3ee;
+    --danger: #f87171;
+
+    --font-ui: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+    --font-mono: "Cascadia Mono", Consolas, ui-monospace, monospace;
+
+    --sidebar: 320px;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+[hidden] {
+    display: none !important;
+}
+
+html,
+body {
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-ui);
+    font-size: 14px;
+    line-height: 1.5;
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr) auto;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+    outline: 1px solid var(--cyan);
+    outline-offset: 2px;
+}
+
+kbd {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    border: 1px solid var(--line-strong);
+    padding: 1px 5px;
+    white-space: nowrap;
+}
+
+code {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--violet);
+}
+
+/* ---------------------------------------------------------------- top bar */
+
+.topbar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 10px 16px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--line);
+    user-select: none;
+}
+
+.app-title {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text);
+    white-space: nowrap;
+}
+
+.app-title::first-letter {
+    color: var(--violet);
+}
+
+.topbar-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* ----------------------------------------------------------------- buttons */
+
+.btn {
+    appearance: none;
+    font: inherit;
+    font-size: 13px;
+    color: var(--text);
+    background: var(--panel-raised);
+    border: 1px solid var(--line-strong);
+    border-radius: 0;
+    padding: 7px 13px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.btn:hover:not(:disabled) {
+    border-color: #3b4d61;
+    background: #17212c;
+}
+
+.btn:active:not(:disabled) {
+    background: #101822;
+}
+
+.btn:disabled {
+    color: var(--text-faint);
+    border-color: var(--line);
+    background: transparent;
+    cursor: not-allowed;
+}
+
+.btn.primary {
+    color: #f4f1ff;
+    border-color: var(--violet-deep);
+    background: #241640;
+}
+
+.btn.primary:hover:not(:disabled) {
+    border-color: var(--violet);
+    background: #2e1b52;
+}
+
+.btn.primary:disabled {
+    color: var(--text-faint);
+    border-color: var(--line);
+    background: transparent;
+}
+
+.btn.ghost {
+    background: transparent;
+    border-color: var(--line);
+    color: var(--text-dim);
+}
+
+.btn.ghost:hover {
+    color: var(--text);
+    border-color: var(--line-strong);
+    background: transparent;
+}
+
+.btn.wide {
+    display: block;
+    width: 100%;
+    margin-top: 4px;
+    text-align: center;
+}
+
+/* --------------------------------------------------------------- workspace */
+
+.workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--sidebar);
+    min-height: 0;
+}
+
+.stage {
+    position: relative;
+    min-width: 0;
+    min-height: 0;
+    padding: 24px;
+    background-color: var(--bg);
+}
+
+.stage-area {
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    display: grid;
+    place-items: center;
+}
+
+.stage.drop-active {
+    box-shadow: inset 0 0 0 1px var(--cyan);
+}
+
+.stage-empty {
+    display: grid;
+    gap: 12px;
+    justify-items: center;
+    max-width: min(100%, 54ch);
+    text-align: center;
+}
+
+.stage-empty p {
+    margin: 0;
+}
+
+/* The drop zone is drawn, not implied: a hairline boundary that turns cyan while a file is
+   over the window. The stage ring above stays as the state the drag is in; this is where it
+   would land. */
+.drop-target {
+    display: grid;
+    gap: 10px;
+    justify-items: center;
+    padding: 40px 52px;
+    /* Violet-deep rather than a grey hairline: 3.4:1 against the stage, so the boundary is
+       perceivable, and it is the accent that already marks the actionable thing. */
+    border: 1px dashed var(--violet-deep);
+    transition: border-color 120ms linear, background-color 120ms linear;
+}
+
+.stage.drop-active .drop-target {
+    border-color: var(--cyan);
+    background: rgba(34, 211, 238, 0.04);
+}
+
+.empty-lead {
+    font-size: 15px;
+    color: var(--text);
+}
+
+.empty-keys {
+    font-size: 12px;
+    line-height: 2.1;
+    color: var(--text-dim);
+}
+
+.empty-note {
+    font-size: 12px;
+    color: var(--text-faint);
+}
+
+.frame {
+    position: relative;
+    width: 0;
+    height: 0;
+    background-color: #0b1017;
+    background-image:
+        linear-gradient(45deg, #101822 25%, transparent 25%, transparent 75%, #101822 75%),
+        linear-gradient(45deg, #101822 25%, transparent 25%, transparent 75%, #101822 75%);
+    background-size: 22px 22px;
+    background-position: 0 0, 11px 11px;
+    box-shadow: 0 0 0 1px var(--line-strong), 0 30px 70px -40px #000;
+}
+
+.frame.busy {
+    box-shadow: 0 0 0 1px var(--violet-deep), 0 30px 70px -40px #000;
+}
+
+#canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: #0a0e13;
+}
+
+#nubs {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.nub {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    transform: translate(-50%, -50%);
+    background: var(--cyan);
+    border: 1px solid rgba(8, 11, 15, 0.9);
+    box-shadow: 0 0 0 1px var(--violet-deep), 0 0 12px 2px var(--violet-glow);
+    cursor: grab;
+    pointer-events: auto;
+}
+
+/* The point stays 14 px so it does not cover the picture; the pointer target is
+   28 px, expanded symmetrically so the visual centre and the drag maths do not
+   move. */
+.nub::before {
+    content: "";
+    position: absolute;
+    inset: -8px;
+}
+
+.nub:active {
+    cursor: grabbing;
+}
+
+.nub:focus-visible {
+    outline: 2px solid var(--text);
+    outline-offset: 2px;
+}
+
+/* While a file is dragged over a stage that already holds an image, say what the drop does.
+   Shown only when the frame is visible, so it never sits on top of the empty-state copy;
+   pointer-events: none keeps the drag targeting the stage underneath. */
+.drop-cue {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    background: rgba(8, 11, 15, 0.62);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.drop-cue span {
+    padding: 9px 15px;
+    font-size: 13px;
+    color: var(--text);
+    background: var(--panel-raised);
+    border: 1px solid var(--cyan);
+}
+
+.stage.drop-active:has(#frame:not([hidden])) .drop-cue {
+    opacity: 1;
+    visibility: visible;
+}
+
+.progress {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 1px;
+    overflow: hidden;
+}
+
+.progress span {
+    display: block;
+    height: 1px;
+    width: 32%;
+    background: linear-gradient(90deg, transparent, var(--violet), var(--cyan), transparent);
+    animation: sweep 1.15s linear infinite;
+}
+
+@keyframes sweep {
+    from {
+        transform: translateX(-120%);
+    }
+
+    to {
+        transform: translateX(420%);
+    }
+}
+
+/* ---------------------------------------------------------------- sidebar */
+
+.sidebar {
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background: var(--panel);
+    border-left: 1px solid var(--line);
+}
+
+.group {
+    padding: 16px 18px 20px;
+    border-bottom: 1px solid var(--line);
+}
+
+.group:last-child {
+    border-bottom: 0;
+}
+
+.group-title {
+    margin: 0 0 14px;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+}
+
+.control {
+    margin-bottom: 14px;
+}
+
+.control:last-child {
+    margin-bottom: 0;
+}
+
+.control-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 4px;
+}
+
+.control-head label {
+    font-size: 13px;
+    color: var(--text);
+    cursor: default;
+}
+
+.control-label {
+    font-size: 13px;
+    color: var(--text);
+}
+
+.control-head output {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--violet);
+    font-variant-numeric: tabular-nums;
+}
+
+/* ----------------------------------------------------------------- ranges */
+
+input[type="range"] {
+    appearance: none;
+    -webkit-appearance: none;
+    display: block;
+    width: 100%;
+    /* 24 px pointer target (WCAG 2.2 target size). The track and thumb are still centred in
+       the 18 px band the layout was drawn for, and the -3 px margins pull the extra height
+       back out of the flow, so no other control moves. */
+    height: 24px;
+    margin: -3px 0;
+    background: transparent;
+    cursor: pointer;
+    --fill: 0%;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+    height: 2px;
+    background: linear-gradient(90deg,
+            var(--violet-deep) 0 var(--fill),
+            var(--line-strong) var(--fill) 100%);
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 10px;
+    height: 14px;
+    margin-top: -6px;
+    border: 0;
+    border-radius: 0;
+    background: var(--violet);
+}
+
+input[type="range"]:hover::-webkit-slider-thumb {
+    background: #c4b5fd;
+}
+
+input[type="range"]:focus-visible {
+    outline: 1px solid var(--cyan);
+    /* The box is 3 px taller than the drawn row on each side, so offset 0 puts the ring on
+       the same pixels it sat on when the input was 18 px tall. */
+    outline-offset: 0;
+}
+
+input[type="range"]:disabled {
+    cursor: not-allowed;
+}
+
+input[type="range"]:disabled::-webkit-slider-thumb {
+    background: var(--line-strong);
+}
+
+input[type="range"]::-moz-range-track {
+    height: 2px;
+    background: var(--line-strong);
+}
+
+input[type="range"]::-moz-range-progress {
+    height: 2px;
+    background: var(--violet-deep);
+}
+
+input[type="range"]::-moz-range-thumb {
+    width: 10px;
+    height: 14px;
+    border: 0;
+    border-radius: 0;
+    background: var(--violet);
+}
+
+/* ------------------------------------------------------------------ chips */
+
+.chip-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.chip {
+    position: relative;
+    display: inline-flex;
+}
+
+.chip input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.chip span {
+    display: inline-block;
+    padding: 5px 10px;
+    font-size: 12px;
+    color: var(--text-dim);
+    border: 1px solid var(--line-strong);
+    background: transparent;
+}
+
+.chip:hover span {
+    border-color: #3b4d61;
+    color: var(--text);
+}
+
+.chip input:checked+span {
+    color: #0a0e14;
+    background: var(--violet);
+    border-color: var(--violet);
+    font-weight: 600;
+}
+
+.chip input:focus-visible+span {
+    outline: 1px solid var(--cyan);
+    outline-offset: 2px;
+}
+
+.chip input:disabled+span {
+    color: var(--text-faint);
+    border-color: var(--line);
+    background: transparent;
+    cursor: not-allowed;
+}
+
+.chip input:disabled:checked+span {
+    color: var(--text-faint);
+    border-color: var(--line);
+    background: #121a23;
+}
+
+.hint {
+    margin: 12px 0 16px;
+    font-size: 12px;
+    line-height: 1.7;
+    color: var(--text-faint);
+}
+
+/* --------------------------------------------------------------- statusbar */
+
+.statusbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 7px 16px;
+    background: var(--panel);
+    border-top: 1px solid var(--line);
+    font-size: 12px;
+    color: var(--text-dim);
+    user-select: none;
+}
+
+.status-text[data-kind="error"] {
+    color: var(--danger);
+}
+
+.status-line {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    min-width: 0;
+}
+
+/* Visual only: never part of the live region. */
+.status-step {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-faint);
+    font-variant-numeric: tabular-nums;
+}
+
+.status-step:empty {
+    display: none;
+}
+
+.meta {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-faint);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ------------------------------------------------------------------ about */
+
+dialog#about {
+    max-width: 620px;
+    padding: 24px 26px;
+    color: var(--text);
+    background: var(--panel-raised);
+    border: 1px solid var(--line-strong);
+    border-radius: 0;
+}
+
+dialog#about::backdrop {
+    background: rgba(4, 7, 10, 0.74);
+}
+
+dialog#about h2 {
+    margin: 0 0 14px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text);
+}
+
+dialog#about p {
+    margin: 0 0 12px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--text-dim);
+}
+
+dialog#about a {
+    color: var(--violet);
+}
+
+dialog#about a:hover {
+    color: var(--cyan);
+}
+
+.about-small {
+    font-size: 12px !important;
+    color: var(--text-faint) !important;
+}
+
+.about-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 18px;
+}
+
+/* ------------------------------------------------------------- narrower end */
+
+@media (max-width: 1000px) {
+    :root {
+        --sidebar: 288px;
+    }
+
+    .stage {
+        padding: 16px;
+    }
+
+    .group {
+        padding: 14px 14px 18px;
+    }
+}
+
+@media (max-width: 780px) {
+    :root {
+        --sidebar: 264px;
+    }
+
+    .app-title {
+        letter-spacing: 0.08em;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .progress span {
+        animation: none;
+        width: 100%;
+        opacity: 0.55;
+    }
+
+    .drop-target {
+        transition: none;
+    }
+}
