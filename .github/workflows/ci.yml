@@ -15,8 +15,8 @@
 # single-file binary rather than a framework-dependent apphost.
 #
 # COST RULE - GitHub Actions is FREE on public repos and METERED on private ones
-# (windows-latest bills at 2x per minute). Manual only while private; restore
-# push and pull_request triggers if the repository becomes public.
+# (windows-latest bills at 2x per minute). Manual while the repository is private;
+# restore the push and pull_request triggers once it is public.
 name: ci
 
 on:
