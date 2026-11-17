@@ -86,11 +86,16 @@ Not conveyed, and not part of the Corresponding Source: the .NET 10 SDK and runt
 own components under their own licences; the pinned package version (`1.0.4314.35`) and the scripts that
 consume them are in the archive, which is what the licence asks for.
 
-The notices each binary must carry, and does carry: `NOTICE.md` at the root of the portable folder and in
-the install directory, `app/LICENSE`, `app/ATTRIBUTION.md` and `app/vendor/NOTICE`, plus the in-app
-`Licence` dialog. The installer copies the portable folder whole, so nothing is dropped on the way in.
-The commit SHA, the tag, the attached source archive name and its SHA-256 are recorded in the tables
-above.
+The notices each binary must carry, and does carry:
+
+- `NOTICE.md`, at the root of the portable folder and in the install directory
+- `app/LICENSE`
+- `app/ATTRIBUTION.md`
+- `app/vendor/NOTICE`
+- the in-app `Licence` dialog
+
+The installer copies the portable folder whole, so nothing is dropped on the way in. The commit SHA,
+the tag, the attached source archive name and its SHA-256 are recorded in the tables above.
 
 ## Checks
 
@@ -126,12 +131,20 @@ run recorded against the tagged commit, and quote none of them in the release no
 
 ## Credits and licence
 
-Bytefry is a modified desktop build of **Meme Deep Fryer** by Dima and contributors
-(<https://deepfriedmemes.com>, <https://github.com/efskap/deepfriedmemes.com>), which is licensed under
-the GNU General Public License, version 3. The upstream licence file carries no "or later" grant, so this
-release is distributed under the same terms as GPL-3.0-only; the full text ships in the app folder as
-`LICENSE`, and the changes are itemised in `ATTRIBUTION.md`.
-Bundled unchanged: CamanJS (BSD-3-Clause, 2010 Ryan LeFevre) and glfx.js (MIT, 2011 Evan Wallace).
+Bytefry is a modified desktop build of **Meme Deep Fryer** by Dima and contributors, licensed under the
+GNU General Public License, version 3:
+
+- Project <https://deepfriedmemes.com>
+- Source <https://github.com/efskap/deepfriedmemes.com>
+
+The upstream licence file carries no "or later" grant, so this release is distributed under the same
+terms as GPL-3.0-only; the full text ships in the app folder as `LICENSE`, and the changes are itemised
+in `ATTRIBUTION.md`.
+
+Bundled unchanged:
+
+- CamanJS — BSD-3-Clause, 2010 Ryan LeFevre
+- glfx.js — MIT, 2011 Evan Wallace
 
 ## Publication record
 

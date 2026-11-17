@@ -110,7 +110,8 @@ icon check needs Python with Pillow and numpy; nothing else here does.
 | [`app/README.md`](app/README.md) | the web layer: the pipeline order, the keys, the offline rules, the bridge calls it makes |
 | [`desktop/README.md`](desktop/README.md) | the host: bridge contract v1, host policy, build and packaging, what the save can and cannot promise |
 | [`docs/naming.md`](docs/naming.md) | Bytefry against the pre-rename names, and which of those stay and why |
-| [`docs/release-0.1.1.md`](docs/release-0.1.1.md), [`docs/release-0.1.0.md`](docs/release-0.1.0.md) | each published release: assets, SHA-256 values, corresponding source, checks |
+| [`docs/release-0.1.1.md`](docs/release-0.1.1.md) | 0.1.1, the current release: assets, SHA-256 values, corresponding source, checks |
+| [`docs/release-0.1.0.md`](docs/release-0.1.0.md) | 0.1.0, superseded by 0.1.1: assets, SHA-256 values, corresponding source, checks |
 | [`CHANGELOG.md`](CHANGELOG.md) | what changed in each version |
 | [`third_party/`](third_party) | the vendored CamanJS and glfx.js source, and how each shipped artifact was produced |
 
@@ -123,6 +124,10 @@ maintained by one person, not a team. If it breaks,
 
 ## Links
 
-- [Releases](https://github.com/nathwn12/bytefry/releases) · [Issues](https://github.com/nathwn12/bytefry/issues) · [Changelog](CHANGELOG.md)
-- Upstream: [Meme Deep Fryer](https://deepfriedmemes.com) by [Dima](https://dmitry.lol) and contributors, [source on GitHub](https://github.com/efskap/deepfriedmemes.com)
-- Licence: [GPL-3.0-only](LICENSE). The upstream licence file grants version 3 and no later version, so this build claims none. Every release carries its corresponding source: the tagged tree's source archive is on the same release page.
+- [Releases](https://github.com/nathwn12/bytefry/releases)
+- [Issues](https://github.com/nathwn12/bytefry/issues)
+- [Changelog](CHANGELOG.md)
+- Upstream: [Meme Deep Fryer](https://deepfriedmemes.com) by [Dima](https://dmitry.lol) and
+  contributors, [source on GitHub](https://github.com/efskap/deepfriedmemes.com)
+- Licence: [GPL-3.0-only](LICENSE) — the upstream licence file grants version 3 and no later version,
+  so this build claims none; every release carries its corresponding source on its release page.
