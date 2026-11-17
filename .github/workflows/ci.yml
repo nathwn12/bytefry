@@ -20,6 +20,7 @@
 # because this repository carries no PowerShell.
 #
 # Public CI runs on pushes and pull requests; manual runs remain available.
+# A docs-only change (*.md, docs/, LICEN[CS]E) keeps the required check green and runs no build.
 name: ci
 
 on:
@@ -37,8 +38,32 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Full history: the scope step below diffs against the base branch with
+          # `...`, which needs a merge base (and, on a push, the `before` commit).
+          fetch-depth: 0
+
+      - name: Detect a docs-only change
+        id: scope
+        shell: bash
+        run: |
+          docs='^(.*\.md|docs/.*|LICEN[CS]E(\.md)?)$'
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git fetch --no-tags --depth=1 origin "${{ github.base_ref }}"
+            changed=$(git diff --name-only "origin/${{ github.base_ref }}...HEAD")
+          elif [ "${{ github.event_name }}" = "push" ] && [ -n "${{ github.event.before }}" ]; then
+            changed=$(git diff --name-only "${{ github.event.before }}" HEAD || true)
+          else
+            changed=$(git ls-files)
+          fi
+          if [ -n "$changed" ] && ! printf '%s\n' "$changed" | grep -qvE "$docs"; then
+            echo "code=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "code=true" >> "$GITHUB_OUTPUT"
+          fi
 
       - uses: actions/setup-dotnet@v4
+        if: steps.scope.outputs.code == 'true'
         with:
           dotnet-version: 10.0.x
 
@@ -46,6 +71,7 @@ jobs:
       # or newer; lts/* satisfies that. No lockfile: app/ and tests/ ship no
       # runtime dependencies.
       - uses: actions/setup-node@v4
+        if: steps.scope.outputs.code == 'true'
         with:
           node-version: lts/*
 
@@ -55,10 +81,12 @@ jobs:
       # declare. Offline, dependency-free, read-only, seconds to run, and they
       # need nothing but Node, so they gate before the publish.
       - name: Verify bundled CamanJS source
+        if: steps.scope.outputs.code == 'true'
         shell: bash
         run: node third_party/camanjs/verify.mjs
 
       - name: Verify bundled glfx source
+        if: steps.scope.outputs.code == 'true'
         shell: bash
         run: node third_party/glfx/verify.mjs
 
@@ -67,6 +95,7 @@ jobs:
       # Inno Setup 6) is a release artefact, not a per-push gate; the image does
       # carry the Inno Setup compiler if that ever changes.
       - name: Build the portable host
+        if: steps.scope.outputs.code == 'true'
         shell: bash
         run: node desktop/build.mjs --configuration Release
 
@@ -74,6 +103,7 @@ jobs:
       # resolution, the bridge host, the injected script, packaging invariants,
       # the icon, the command line, and the self-check report gate.
       - name: Test the host
+        if: steps.scope.outputs.code == 'true'
         shell: bash
         run: node desktop/test.mjs --configuration Release
 
@@ -90,6 +120,7 @@ jobs:
       # windows-latest ships both Chrome and Edge, so no environment variable is
       # needed; set FRYER_CHROME only if an image ever moves one of them.
       - name: Test the web layer
+        if: steps.scope.outputs.code == 'true'
         shell: bash
         run: node tests/run.mjs
 
@@ -100,3 +131,8 @@ jobs:
           echo 'for WebView2 to compose the page. A hosted runner cannot be trusted to'
           echo 'compose it, so the check stays opt-in. Run it locally:'
           echo '  node desktop/build.mjs --verify'
+
+      - name: Scope
+        if: always()
+        run: |
+          echo "scope: ${{ steps.scope.outputs.code == 'true' && 'code changed - the full gate ran' || 'docs-only - build skipped, the check stays green' }}"
