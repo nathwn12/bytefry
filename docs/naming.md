@@ -30,11 +30,14 @@ Each of these is invisible in the product, and changing it would break something
 `app/ATTRIBUTION.md`, `desktop/NOTICE.md`, `app/LICENSE` and the in-app attribution dialog. Bytefry is
 the name of this build.
 
-## Still open
+## The repository
 
-The checkout folder is `meme-fryer-desktop`, and no repository exists yet. Renaming either changes doc
-paths and the CI file but nothing a user installs, so it stays the owner's call until a repository is
-created.
+The repository is [`nathwn12/bytefry`](https://github.com/nathwn12/bytefry), private, and it carries two
+kinds of tag: a version tag `vX.Y.Z` is the immutable source of record for a published build, and the
+release is published under the tag `bytefry` at
+<https://github.com/nathwn12/bytefry/releases/tag/bytefry>, on commit `2ab8d0b` — the same commit as
+`v0.1.1` — carrying that version's downloads. `v0.1.0` has no release page or downloads any more; its tag
+remains. The name of a local checkout folder is not part of the product and is not recorded here.
 
 ## Leftover from an upgrade
 

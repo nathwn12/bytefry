@@ -1,9 +1,12 @@
-# Bytefry 0.1.0 — release draft
+# Bytefry 0.1.0 — release record
 
-**Release preparation notes.** This document records the planned contents and checks; consult the
-repository's release page for the actual publication status and assets.
-
-## Bytefry 0.1.0
+| | |
+|---|---|
+| Published | 2026-11-16, 18:12 UTC; that release page no longer exists |
+| Source tag | `v0.1.0` at commit `7c694dd6374686ace6b16c8107b62fcf64b0b8c7`, immutable |
+| Release page | none — the page at tag `v0.1.0` and its assets were removed when the product moved to one stable release |
+| Available now | the source tag only: <https://github.com/nathwn12/bytefry/tree/v0.1.0> |
+| Superseded | yes, by [`0.1.1`](release-0.1.1.md), whose record names the stable release the downloads come from |
 
 Deep-fry an image in a Windows window: repeat-JPEG crush, a WebGL bulge and five filters, all running on
 your machine, then save. The first release is the desktop host and the rebuilt interface — no analytics,
@@ -33,34 +36,45 @@ Requirements: Windows 10 or later, x64 or ARM64, and the Microsoft Edge WebView2
 Windows 11). The default build is self-contained: the .NET 10 runtime travels inside the single
 executable, so the machine needs no separate .NET install.
 
-## Assets to attach
+## Released assets
 
-Build these from the tagged commit; do not attach a local build from an earlier tree. The setup file is
-the name the build produces today; the zip name is a packaging choice for the release. Internal names that
-keep the pre-rename spelling are listed in [`naming.md`](naming.md).
+Built from the tagged commit; these were the names, bytes and digests the 0.1.0 release page carried.
+That page and those files have been removed, so the values stay here as the record of what shipped and
+none of them can be downloaded now.
+
+| Asset | Bytes | SHA-256 |
+|---|---|---|
+| `Bytefry-0.1.0-setup.exe` | 45021363 | `1720706e2d88efb25d0c559c69fae1a245d190512deaec3775d7dd78f409439f` |
+| `Bytefry-0.1.0-portable-x64-release.zip` | 44476540 | `fb8edd3151e4f5bf7927915de664df411efad9d85108f5f206a7a5333e636182` |
+| `Bytefry-0.1.0-source.zip` | 1327791 | `099f25dd6f322eac251531d037f6ba963c3650e097480c82a8deb119aaec1c2a` |
+
+How each one is produced:
 
 | Asset | Produced by | Notes |
 |---|---|---|
 | `Bytefry-0.1.0-setup.exe` | `pwsh -File desktop/build.ps1 -Installer` | per-user installer, architecture follows the payload |
-| `Bytefry-0.1.0-portable.zip` | `pwsh -File desktop/build.ps1`, then zip `desktop\dist\portable\` | the archive must keep `app\` beside `Bytefry.exe` |
+| `Bytefry-0.1.0-portable-x64-release.zip` | `pwsh -File desktop/build.ps1`, then archive the contents of `desktop\dist\portable\` | the archive keeps `app\` beside `Bytefry.exe` |
+| `Bytefry-0.1.0-source.zip` | `git archive --format=zip --prefix=Bytefry-0.1.0/ v0.1.0` | the curated source archive; see below |
 
-Record the SHA-256 of each attached file at upload time and paste the real values here; do not guess
-them. Tag convention: `v0.1.0`.
+The setup file is the name the build produces; the zip name is a packaging choice made at release time
+and does not follow the build's version-stamped naming. Internal names that keep the pre-rename
+spelling are listed in [`naming.md`](naming.md).
 
 ## Corresponding source and build materials
 
 GPL-3.0-only section 6 requires that a binary be accompanied by its Corresponding Source, conveyed either
 alongside it or from a network server at the same place; section 1 defines that source as the preferred
-form plus the scripts used to control compilation and installation. So this release rides on a tag: the tag
-is the source, the same release page serves the tag's source archive, and no binary is uploaded without it.
+form plus the scripts used to control compilation and installation. So this release rode on a tag: the
+tag is the source of record, the binaries were uploaded beside its archive, and that release page has
+since been removed. The tag is what survives.
 
 | What | How it is delivered | Notes |
 |---|---|---|
-| Corresponding Source for `v0.1.0` | The source archive GitHub generates for that tag, offered on the same release page (`Source code (zip)` and `Source code (tar.gz)`) | Generated from the tagged commit, not from a branch. The URL does not exist until the release is published; do not write one here before then |
-| Optional curated archive | `Bytefry-0.1.0-source.zip`, built from the same commit with `git archive --format=zip --prefix=Bytefry-0.1.0/ v0.1.0` | The same tree as the tag archive, with nothing added or left out beyond the `--prefix` directory. If both are offered they must come from the identical commit |
-| Rebuild route | `pwsh -File desktop/build.ps1 -Installer` from the root of the extracted archive | Needs the .NET SDK 10 and Inno Setup 6; produces an equivalent setup and portable folder, not a byte-identical reproduction — see below |
+| Corresponding Source for `v0.1.0` | The `v0.1.0` tag in this repository: <https://github.com/nathwn12/bytefry/tree/v0.1.0> | Commit `7c694dd`, the tree the 0.1.0 binaries were built from. The release page that also carried GitHub's generated archives (`Source code (zip)` and `Source code (tar.gz)`) has been removed, and the tag is the source of record that remains |
+| Curated archive | `Bytefry-0.1.0-source.zip` — 1327791 bytes, SHA-256 in *Released assets* above; no longer available | Built from the same commit with `git archive --format=zip --prefix=Bytefry-0.1.0/ v0.1.0`. The same tree as the tag archive, with nothing added or left out beyond the `--prefix` directory |
+| Rebuild route | `pwsh -File desktop/build.ps1 -Installer` from the root of a checkout of tag `v0.1.0` | The extracted archive once offered for this is gone; the tag carries the same tree. Needs the .NET SDK 10 and Inno Setup 6; produces an equivalent setup and portable folder, not a byte-identical reproduction — see below |
 
-The archive carries everything needed to rebuild the binaries:
+The tag carries everything needed to rebuild the binaries:
 
 - `app/` — `index.html`, `styles.css`, `app.js`, `vendor/` (CamanJS, glfx.js), `LICENSE`, `ATTRIBUTION.md`, `README.md`.
 - `desktop/` — `MemeFryer.Desktop/` (host sources, `MemeFryer.Desktop.csproj`, `app.manifest`, `Assets/` with the icon and `make-icon.py`), `installer/MemeFryer.iss`, `build.ps1`, `test.ps1`, `selfcheck-report.ps1`, `run-dev.ps1`, `NOTICE.md`, `README.md`.
@@ -69,22 +83,30 @@ The archive carries everything needed to rebuild the binaries:
 
 Both bundled libraries have their exact source in the tag, and both ship a file that upstream published rather than one built here. For CamanJS the shipped bundle is the `dist` artifact of `caman` 4.1.2 (commit `36697e0`): after normalising line endings, `verify.mjs` matches it byte for byte. For glfx.js the shipped file is the published `gh-pages` artifact up to one header line that the upstream build tool itself changed in 2022, and upstream's `build.py` pipes the sources through whatever `closure` is on `PATH`: neither the compiler nor its version is recorded upstream, so a byte-for-byte rebuild of that bundle cannot be derived from the tree and is unverified. The artifact is pinned as a file; the source is what explains it.
 
-That has a consequence for this release: the source archive lets anyone rebuild an equivalent Bytefry, but no byte-identical output is promised — not for `glfx.js`, and not for the Windows binaries either.
+That has a consequence for this release: the tagged tree lets anyone rebuild an equivalent Bytefry, but no byte-identical output is promised — not for `glfx.js`, and not for the Windows binaries either.
 
 Not conveyed, and not part of the Corresponding Source: the .NET 10 SDK and runtime, the
 `Microsoft.Web.WebView2` package, and the WebView2 Runtime installed on the machine. They are Microsoft's
 own components under their own licences; the pinned package version (`1.0.4314.35`) and the scripts that
 consume them are in the archive, which is what the licence asks for.
 
-The notices each binary must carry, and does carry: `NOTICE.md` at the root of the portable folder and in
-the install directory, `app/LICENSE`, `app/ATTRIBUTION.md` and `app/vendor/NOTICE`, plus the in-app
-`Licence` dialog. The installer copies the portable folder whole, so nothing is dropped on the way in.
-Record at publish time, in this file: the commit SHA, the tag, the attached source archive name and its
-SHA-256, and this notice list — as they actually are, not as planned.
+The notices each binary must carry, and does carry:
 
-## Checks to record before publishing
+- `NOTICE.md`, at the root of the portable folder and in the install directory
+- `app/LICENSE`
+- `app/ATTRIBUTION.md`
+- `app/vendor/NOTICE`
+- the in-app `Licence` dialog
 
-Not yet recorded for this release. Run, in this order, and record the real output:
+The installer copies the portable folder whole, so nothing is dropped on the way in. The commit SHA,
+the tag, the attached source archive name and its SHA-256 are recorded in the tables above.
+
+## Checks
+
+No durable receipt for this gate is on file for 0.1.0: the release page it shipped from and this
+repository carried no output of it, and that page has since been removed. Whether it ran at the time is
+therefore not recorded anywhere this document can cite, and nothing here claims it passed. The commands
+are the gate and are unchanged, so they can be re-run against the tag. In order:
 
 1. `node third_party/camanjs/verify.mjs` and `node third_party/glfx/verify.mjs` — offline and
    dependency-free: they prove the shipped `app/vendor/` bytes are the pinned upstream artifacts and that
@@ -113,20 +135,38 @@ run recorded against the tagged commit, and quote none of them in the release no
 
 ## Credits and licence
 
-Bytefry is a modified desktop build of **Meme Deep Fryer** by Dima and contributors
-(<https://deepfriedmemes.com>, <https://github.com/efskap/deepfriedmemes.com>), which is licensed under
-the GNU General Public License, version 3. The upstream licence file carries no "or later" grant, so this
-release is distributed under the same terms as GPL-3.0-only; the full text ships in the app folder as
-`LICENSE`, and the changes are itemised in `ATTRIBUTION.md`.
-Bundled unchanged: CamanJS (BSD-3-Clause, 2010 Ryan LeFevre) and glfx.js (MIT, 2011 Evan Wallace).
+Bytefry is a modified desktop build of **Meme Deep Fryer** by Dima and contributors, licensed under the
+GNU General Public License, version 3:
 
-## Publication checklist
+- Project <https://deepfriedmemes.com>
+- Source <https://github.com/efskap/deepfriedmemes.com>
 
-- [ ] Owner approves the release text and the assets.
-- [ ] Repository created: the working copy is not a git repository yet, so there is no tag, no Issues link
-      and nowhere to attach an asset.
-- [ ] Checks above run and recorded.
-- [ ] Tag `v0.1.0` pushed, and the binaries attached together with that tag's source archive (or a curated
-      source zip from the same commit) and real SHA-256 values.
-- [ ] Release notes name the tag as the Corresponding Source and list the notices each binary carries:
-      `NOTICE.md`, `app/LICENSE`, `app/ATTRIBUTION.md`, `app/vendor/NOTICE`, and the in-app dialog.
+The upstream licence file carries no "or later" grant, so this release is distributed under the same
+terms as GPL-3.0-only; the full text ships in the app folder as `LICENSE`, and the changes are itemised
+in `ATTRIBUTION.md`.
+
+Bundled unchanged:
+
+- CamanJS — BSD-3-Clause, 2010 Ryan LeFevre
+- glfx.js — MIT, 2011 Evan Wallace
+
+## Publication record
+
+Receipts this repository can cite: the repository and its tags exist. The release page this version
+shipped from has been removed, so its assets can no longer be downloaded or checked against the digests
+above.
+
+- [x] Repository `nathwn12/bytefry` exists, is private, and was created 2026-11-16 18:11 UTC, so the
+      tag, the issue tracker and an asset host are real.
+- [x] Tag `v0.1.0` at `7c694dd` pushed, and the binaries were attached with that tag's source archives and
+      the curated source zip. That page and those files have since been removed; the SHA-256 values in
+      *Released assets* are the record of what was attached.
+- [x] The 0.1.0 notes named the tag as the Corresponding Source and stated that the upstream credits and
+      third-party notices were included. Those notes lived on the removed page, so this record repeats
+      what they said rather than citing them.
+- [ ] Owner approval of the release text and the assets: no durable receipt. The release was published
+      under the `nathwn12` account, which shows the page went out; an approval may well have been given,
+      but none was recorded in an artifact this repository or the release page carried, so this record
+      cannot cite one.
+- [ ] The publication-day gate, packaging included: no durable receipt on file for this version — see
+      *Checks*.

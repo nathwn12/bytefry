@@ -1,9 +1,12 @@
-# Bytefry 0.1.1 — release draft
+# Bytefry 0.1.1 — release record
 
-**Release preparation notes.** This document records the planned contents and checks; consult the
-repository's release page for the actual publication status and assets.
-
-## Bytefry 0.1.1
+| | |
+|---|---|
+| Published | 2026-11-16, 19:35 UTC, on a release page at tag `v0.1.1`; that page has since been replaced by the stable release below |
+| Source tag | `v0.1.1` at commit `2ab8d0b0305a8421650f85e9cc8e7f6446724ed6`, immutable |
+| Release | <https://github.com/nathwn12/bytefry/releases/tag/bytefry> — the product's stable release, whose assets are this version's |
+| Release tag | `bytefry`, on the same commit as `v0.1.1`: the version tag is the source of record, the release carries the downloads |
+| Superseded | no; this is the current version |
 
 The 0.1.0 application with a redesigned icon. Deep-fry an image in a Windows window: repeat-JPEG
 crush, a WebGL bulge and five filters, all running on your machine, then save. Still no analytics,
@@ -48,32 +51,40 @@ Requirements: Windows 10 or later, x64 or ARM64, and the Microsoft Edge WebView2
 Windows 11). The default build is self-contained: the .NET 10 runtime travels inside the single
 executable, so the machine needs no separate .NET install.
 
-## Assets to attach
+## Released assets
 
-Build these from the tagged commit; do not attach a local build from an earlier tree. The names below
-match the 0.1.0 release page. Internal names that keep the pre-rename spelling are listed in
+Built from the tagged commit; these are the names, bytes and digests the stable release carries, each one
+downloaded from `https://github.com/nathwn12/bytefry/releases/download/bytefry/<asset name>`. The zip name
+differs from 0.1.0's: that release shipped `Bytefry-0.1.0-portable-x64-release.zip`, and this one ships
+`Bytefry-0.1.1-portable-x64.zip`. Internal names that keep the pre-rename spelling are listed in
 [`naming.md`](naming.md).
+
+| Asset | Bytes | SHA-256 |
+|---|---|---|
+| `Bytefry-0.1.1-setup.exe` | 44724689 | `0530bdac4e0c93318819883fcf6ffabb98e12f3c4d49499c1dc1875fe04e509b` |
+| `Bytefry-0.1.1-portable-x64.zip` | 44222681 | `35ccaa08db3e26b55d0e4ca273e21e084133eaa0e66051062012647b5acc9933` |
+| `Bytefry-0.1.1-source.zip` | 364182 | `8c05c4717e560e6e03449a6db2137f8610783883cfecce24ef71c54c3afbf279` |
+
+How each one is produced:
 
 | Asset | Produced by | Notes |
 |---|---|---|
 | `Bytefry-0.1.1-setup.exe` | `pwsh -File desktop/build.ps1 -Installer` | per-user installer, architecture follows the payload |
-| `Bytefry-0.1.1-portable-x64-release.zip` | `pwsh -File desktop/build.ps1`, then archive the contents of `desktop\dist\portable\` | the archive must keep `app\` beside `Bytefry.exe` |
-
-Record the SHA-256 of each attached file at upload time and paste the real values here; do not guess
-them. Tag convention: `v0.1.1`.
+| `Bytefry-0.1.1-portable-x64.zip` | `pwsh -File desktop/build.ps1`, then archive the contents of `desktop\dist\portable\` | the archive keeps `app\` beside `Bytefry.exe` |
+| `Bytefry-0.1.1-source.zip` | `git archive --format=zip --prefix=Bytefry-0.1.1/ v0.1.1` | the curated source archive; see below |
 
 ## Corresponding source and build materials
 
 GPL-3.0-only section 6 requires that a binary be accompanied by its Corresponding Source, conveyed
 either alongside it or from a network server at the same place; section 1 defines that source as the
 preferred form plus the scripts used to control compilation and installation. So this release rides on
-a tag: the tag is the source, the same release page serves the tag's source archive, and no binary is
-uploaded without it.
+a tag: the version tag is the source of record, the stable release serves its own tag's source archive
+on the same commit, and no binary is uploaded without it.
 
 | What | How it is delivered | Notes |
 |---|---|---|
-| Corresponding Source for `v0.1.1` | The source archive GitHub generates for that tag, offered on the same release page (`Source code (zip)` and `Source code (tar.gz)`) | Generated from the tagged commit, not from a branch. The URL does not exist until the release is published; do not write one here before then |
-| Optional curated archive | `Bytefry-0.1.1-source.zip`, built from the same commit with `git archive --format=zip --prefix=Bytefry-0.1.1/ <commit>` | The same tree as the tag archive, with nothing added or left out beyond the `--prefix` directory. If both are offered they must come from the identical commit |
+| Corresponding Source for `v0.1.1` | The source archive GitHub generates for the release's tag, offered on the stable release page (`Source code (zip)` and `Source code (tar.gz)`), and the `v0.1.1` tag itself in this repository: <https://github.com/nathwn12/bytefry/tree/v0.1.1> | The release tag `bytefry` and the version tag `v0.1.1` are commit `2ab8d0b`, so the page's archives and the version tag are the same tree |
+| Curated archive | `Bytefry-0.1.1-source.zip` on the stable release page — 364182 bytes, SHA-256 in *Released assets* above | Built from the tag with `git archive --format=zip --prefix=Bytefry-0.1.1/ v0.1.1`. The same tree as the tag archive, with nothing added or left out beyond the `--prefix` directory |
 | Rebuild route | `pwsh -File desktop/build.ps1 -Installer` from the root of the extracted archive | Needs the .NET SDK 10 and Inno Setup 6; produces an equivalent setup and portable folder, not a byte-identical reproduction — see below |
 
 The archive carries everything needed to rebuild the binaries:
@@ -102,31 +113,43 @@ Not conveyed, and not part of the Corresponding Source: the .NET 10 SDK and runt
 Microsoft's own components under their own licences; the pinned package version (`1.0.4314.35`) and the
 scripts that consume them are in the archive, which is what the licence asks for.
 
-The notices each binary must carry, and does carry: `NOTICE.md` at the root of the portable folder and
-in the install directory, `app/LICENSE`, `app/ATTRIBUTION.md` and `app/vendor/NOTICE`, plus the in-app
-`Licence` dialog. The installer copies the portable folder whole, so nothing is dropped on the way in.
-Record at publish time, in this file: the commit SHA, the tag, the attached source archive name and its
-SHA-256, and this notice list — as they actually are, not as planned.
+The notices each binary must carry, and does carry:
 
-## Checks to record before publishing
+- `NOTICE.md`, at the root of the portable folder and in the install directory
+- `app/LICENSE`
+- `app/ATTRIBUTION.md`
+- `app/vendor/NOTICE`
+- the in-app `Licence` dialog
 
-Run, in this order, and record the real output:
+The installer copies the portable folder whole, so nothing is dropped on the way in. The commit SHA,
+the tag, the attached source archive name and its SHA-256 are recorded in the tables above.
 
-1. `node third_party/camanjs/verify.mjs` and `node third_party/glfx/verify.mjs` — offline and
-   dependency-free: they prove the shipped `app/vendor/` bytes are the pinned upstream artifacts and that
-   the source beside them is the source those artifacts came from.
-2. `python desktop/MemeFryer.Desktop/Assets/make-icon.py --check` — the committed `.ico` is a fresh
-   render of `assets/icon.svg`, and `icon.lock` agrees with both. Needs Python with Pillow and numpy;
-   `desktop/test.ps1` performs the lock comparison without Python.
-3. `pwsh -File desktop/test.ps1` — the window-free suite: bridge host, injected script in Node, packaging
-   invariants (including the Bytefry identity and the icon), self-check report gate, and the command
-   line's exit codes.
-4. `node tests/run.mjs` — the web-layer suite, in headless Chrome with a throwaway profile and no window.
-   It carries no wall-clock assertions, so a slow or busy machine cannot turn it red.
-5. `pwsh -File desktop/build.ps1 -Installer` — build both packages without opening a window.
+## Checks
 
-The opt-in `-Verify` self-check creates an off-screen window and is not headless. Native window and
-Open/Save dialog behavior remain unverified under the headless-only constraint. Do not uninstall an
+Two runs are involved, and they are not the same evidence.
+
+**Publication day — 2026-11-16, before the release, on `2ab8d0b`.** The session that published 0.1.1
+recorded `node tests/run.mjs` at 76 passed, both `third_party/*/verify.mjs` ok, `desktop/test.ps1` at 63
+passed with every check window-free, and `pwsh -File desktop/build.ps1 -Installer` succeeding — which is
+where the attached installer came from. The icon check is not in that record. None of the output is on
+the release page or in this repository: it is the build session's record, not a receipt a reader can
+check independently.
+
+**This record — 2026-11-17, from a tree that differs from tag `v0.1.1` (tree `e3f8828`) only in
+documentation.** A re-run, not the tag build:
+
+| Check | Command | Result |
+|---|---|---|
+| Vendored CamanJS | `node third_party/camanjs/verify.mjs` | ok — the shipped bundle is the pinned upstream `dist` artifact after CRLF→LF, and all 67 registrations are present |
+| Vendored glfx.js | `node third_party/glfx/verify.mjs` | ok — the published artifact up to the header URL, 28 attached methods backed by the vendored source |
+| Icon | `python desktop/MemeFryer.Desktop/Assets/make-icon.py --check` | ok — a fresh render of `assets/icon.svg` reproduces the committed `.ico`, and `icon.lock` agrees |
+| Window-free suite | `pwsh -File desktop/test.ps1` | all window-free checks passed: 63 passed, 0 failed, 0 skipped, plus the self-check report gate |
+| Web layer | `node tests/run.mjs` | 76 passed, 0 failed |
+| Packaging | `pwsh -File desktop/build.ps1 -Installer` | no durable receipt from this record — the re-run covered the five rows above and stopped there |
+| Self-check (`-Verify`) | `pwsh -File desktop/build.ps1 -Verify` | no receipt in either run; it parks a real window outside every monitor, so it is off-screen rather than headless |
+
+`-Verify` stays opt-in. No receipt records it running, and nothing in the re-run drives the native
+window or the Open/Save dialogs, so those stay unverified rather than checked. Do not uninstall an
 existing installation as part of verification.
 
 `node tests/bench.mjs` is optional and not a gate: it prints where a load spends its time, and it fails
@@ -145,21 +168,51 @@ the run recorded against the tagged commit, and quote none of them in the releas
 
 ## Credits and licence
 
-Bytefry is a modified desktop build of **Meme Deep Fryer** by Dima and contributors
-(<https://deepfriedmemes.com>, <https://github.com/efskap/deepfriedmemes.com>), which is licensed under
-the GNU General Public License, version 3. The upstream licence file carries no "or later" grant, so this
-release is distributed under the same terms as GPL-3.0-only; the full text ships in the app folder as
-`LICENSE`, and the changes are itemised in `ATTRIBUTION.md`.
-Bundled unchanged: CamanJS (BSD-3-Clause, 2010 Ryan LeFevre) and glfx.js (MIT, 2011 Evan Wallace).
+Bytefry is a modified desktop build of **Meme Deep Fryer** by Dima and contributors, licensed under the
+GNU General Public License, version 3:
 
-## Publication checklist
+- Project <https://deepfriedmemes.com>
+- Source <https://github.com/efskap/deepfriedmemes.com>
 
-- [ ] Owner approves the release text and the assets.
-- [ ] Checks above run and recorded.
-- [ ] `0.1.1` in `MemeFryer.Desktop.csproj`, `CHANGELOG.md` and this file agree, and the built
-      executable reports that version.
-- [ ] Tag `v0.1.1` pushed without moving `v0.1.0`, and the binaries attached together with that tag's
-      source archive (or a curated source zip from the same commit) and real SHA-256 values.
-- [ ] The 0.1.0 release stays as published: this is a new release, not a replacement.
-- [ ] Release notes name the tag as the Corresponding Source and list the notices each binary carries:
-      `NOTICE.md`, `app/LICENSE`, `app/ATTRIBUTION.md`, `app/vendor/NOTICE`, and the in-app dialog.
+The upstream licence file carries no "or later" grant, so this release is distributed under the same
+terms as GPL-3.0-only; the full text ships in the app folder as `LICENSE`, and the changes are itemised
+in `ATTRIBUTION.md`.
+
+Bundled unchanged:
+
+- CamanJS — BSD-3-Clause, 2010 Ryan LeFevre
+- glfx.js — MIT, 2011 Evan Wallace
+
+## Publication record
+
+Receipts this repository can cite: the stable release exists and is published under the `nathwn12`
+account, the tags are objects in this repository, each attached asset downloads with the digest above,
+and the shipped executable reports its own version.
+
+- [x] `0.1.1` in `MemeFryer.Desktop.csproj`, `CHANGELOG.md` and this file agree, and the executable in
+      the attached portable archive reports `FileVersion 0.1.1.0` and
+      `ProductVersion 0.1.1+2ab8d0b…`.
+- [x] Tag `v0.1.1` pushed without moving `v0.1.0`; the binaries were attached with that tag's source
+      archives and the curated source zip. They were first attached to a release page at tag `v0.1.1` —
+      that page is gone — and are attached to the stable release now; the names, sizes and SHA-256 values
+      in *Released assets* are unchanged.
+- [x] At publication, the 0.1.0 release stayed as published: both release pages existed and this one was
+      a new release. That is no longer true: the 0.1.0 page and its assets were removed when the product
+      moved to one stable release, and only its source tag remains — see [`release-0.1.0.md`](release-0.1.0.md).
+- [x] Release notes state that third-party notices are included, under `License: GPL-3.0-only`.
+- [x] Five of the gate's steps were re-run for this record — both third-party verifiers,
+      `make-icon.py --check`, `desktop/test.ps1` (63 passed, 0 failed) and `node tests/run.mjs`
+      (76 passed, 0 failed); *Checks* gives the results and says which tree they came from.
+- [ ] Owner approval of the release text and the assets: no durable receipt. The owner asked for the
+      release carrying the new icon and the installer in the session that produced 0.1.1; that request
+      lives in session context, not in an artifact this repository or the release page carries, so this
+      record cannot cite it as proof.
+- [ ] The publication-day gate, packaging included: no durable receipt. The build session recorded
+      `node tests/run.mjs` at 76 passed, both verifiers ok, `desktop/test.ps1` at 63 passed and a
+      successful `-Installer` build, all before the release — see *Checks*.
+- [ ] `-Verify`: no receipt in either the publication-day record or the re-run, so the native window and
+      the dialogs remain unverified rather than checked.
+- [x] Release notes name the tag as the Corresponding Source: the body's Download list carries a
+      `Corresponding source` bullet pointing at <https://github.com/nathwn12/bytefry/tree/v0.1.1>, the
+      tree of the tagged commit `2ab8d0b`, as the 0.1.0 notes did before their page was removed. The
+      tag's own source archives are on the release page too.
