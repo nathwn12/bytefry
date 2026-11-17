@@ -3,7 +3,10 @@
  * The web-layer suite: headless, no window, no dependency, no network.
  *
  *   node tests/run.mjs                 # every test, on the current app/
- *   node tests/run.mjs drop-safety     # one test by name
+ *   node tests/run.mjs bulge-radius    # one test by name: drop-safety,
+ *                                      # load-parity, export-lock,
+ *                                      # export-failure, export-quality,
+ *                                      # bulge-radius
  *   FRYER_APP_JS=<path> node tests/run.mjs
  *                                      # run the suite against another app.js,
  *                                      # which is how the checks are shown to
@@ -19,7 +22,7 @@ import { pathToFileURL } from 'node:url';
 import { join } from 'node:path';
 import { createHarness, testsRoot } from './lib/harness.mjs';
 
-const TESTS = ['drop-safety', 'load-parity', 'export-lock', 'export-failure'];
+const TESTS = ['drop-safety', 'load-parity', 'export-lock', 'export-failure', 'export-quality', 'bulge-radius'];
 
 const only = process.argv[2];
 const selected = only ? TESTS.filter(name => name === only) : TESTS;

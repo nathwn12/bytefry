@@ -73,14 +73,22 @@ export const PROBE = `(() => {
   let failNextEncode = false;
   const realToDataURL = HTMLCanvasElement.prototype.toDataURL;
   HTMLCanvasElement.prototype.toDataURL = function (type, quality) {
+    let row = null;
     if (this === canvasEl) {
-      encodes.push([type || 'image/png', quality === undefined ? null : quality]);
+      /* The row is pushed before the failure, as it always was: a test that
+       * arms the encoder and sees it throw still records the attempt. The byte
+       * length is filled in once the encode returns, so a test can tell a
+       * recorded quality from one the encoder actually honoured. */
+      row = [type || 'image/png', quality === undefined ? null : quality, 0];
+      encodes.push(row);
       if (failNextEncode) {
         failNextEncode = false;
         throw new Error('the encoder failed');
       }
     }
-    return realToDataURL.apply(this, arguments);
+    const url = realToDataURL.apply(this, arguments);
+    if (row) row[2] = url.length;
+    return url;
   };
   t.armEncodes = function () { encodes.length = 0; return true; };
   t.encodeCount = function () { return encodes.length; };

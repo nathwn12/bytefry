@@ -952,6 +952,35 @@ internal static class Program
                 "the profile folder moved, which would orphan the WebView2 profile of an existing install");
         });
 
+        runner.Check("the README credits the one registry write the installer makes", () =>
+        {
+            // The host process writes no registry value of its own. The installer does: Inno Setup's
+            // CreateUninstallRegKey and Uninstallable both default to yes, neither is turned off here,
+            // and the entry they create is the per-user key Apps & Features lists - which is what makes
+            // an upgrade replace the old entry instead of adding a second one. A README that promises
+            // "nothing is written to the registry" is therefore wrong for everyone who took the setup.
+            var iss = File.ReadAllText(issPath);
+            var registers = iss.Contains("AppId=", StringComparison.Ordinal) &&
+                !System.Text.RegularExpressions.Regex.IsMatch(
+                    iss, @"^[ \t]*(CreateUninstallRegKey|Uninstallable)[ \t]*=[ \t]*no",
+                    System.Text.RegularExpressions.RegexOptions.Multiline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            Runner.Require(registers,
+                "the installer no longer registers itself, so this check is measuring the wrong product");
+
+            var root = Path.GetFullPath(Path.Combine(desktopDir, ".."));
+            var readme = File.ReadAllText(Path.Combine(root, "README.md"));
+
+            Runner.Require(!System.Text.RegularExpressions.Regex.IsMatch(
+                    readme, @"nothing[^.\r\n]*written to the registry",
+                    System.Text.RegularExpressions.RegexOptions.IgnoreCase),
+                "README.md says nothing is written to the registry, but the installer registers an Apps & Features entry");
+
+            Runner.Require(System.Text.RegularExpressions.Regex.IsMatch(
+                    readme, @"Apps & Features|Add/Remove Programs|Add or remove programs",
+                    System.Text.RegularExpressions.RegexOptions.IgnoreCase),
+                "README.md never tells the reader that the installer registers the product for upgrade and removal");
+        });
+
         runner.Check("the bundle carries the host's licence notice and names its dependencies", () =>
         {
             var build = File.ReadAllText(buildPath);

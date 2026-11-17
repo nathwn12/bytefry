@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+- The bulge radius is measured in canvas pixels, like the points it pinches, so
+  the same point at the same radius renders the same picture whatever size the
+  window gives the stage. It was measured from the canvas's displayed size, which
+  made the pinch shrink or grow with the window.
+- A Quality slider at 0 exports at 0. The save treated the parsed value as a
+  truthiness test, so the slider's lowest setting silently produced a 0.8 file.
+  The 0.8 default is unchanged for when the after-filters pass is off.
+- The README no longer says nothing is written to the registry: the installer
+  registers the per-user Apps & Features entry it always did, and the host
+  process is now described as the thing that writes nothing.
+
 ## [0.1.1]
 
 The icon change only: the host, the processing pipeline, the bridge contract and

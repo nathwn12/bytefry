@@ -159,7 +159,8 @@ Notes both lanes depend on:
   purpose: an installed copy already has its profile there, so the rename needed no migration.
 - App folder resolution: `MEME_FRYER_APP_DIR`, then `app\` beside the exe, then a bounded walk up the
   source tree to the repo root that holds `app\` beside `desktop\`.
-- One process, one window, `asInvoker`. No registry writes, no services, no scheduled tasks.
+- One process, one window, `asInvoker`. No registry writes, no services, no scheduled tasks. The
+  per-user Apps & Features entry belongs to the installer, not to the host.
 
 ## What the save can and cannot promise
 

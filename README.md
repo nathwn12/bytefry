@@ -50,8 +50,10 @@ filters and the JPEG passes run in the page's canvas and WebGL context, and the 
 the file you save are read and written by the window itself. The embedded browser engine is
 Windows' own WebView2 Runtime, which Microsoft updates separately from this app.
 
-Nothing is written to the registry, no service or scheduled task is installed, and the process runs
-as the invoking user.
+The app itself writes no registry value, installs no service or scheduled task, and the process runs
+as the invoking user. The installer is the one thing that registers the product: it adds the per-user
+entry Apps & Features lists, which is what a newer version replaces and what removes the app later.
+The portable build never touches it.
 
 ## Configure it
 

@@ -248,8 +248,12 @@
         if (!canvasFx) return;
 
         var strength = parseFloat(el.strength.value);
+        /* Canvas pixels, like nub.x and nub.y: glfx pinches the canvas as a
+         * texture at its intrinsic size, so a radius measured from the displayed
+         * size pinches a different share of the picture whenever the window or
+         * the stage changes - same image, same point, different result. */
         var radius = parseFloat(el.radius.value) *
-            (el.canvas.offsetWidth + el.canvas.offsetHeight) / 2;
+            (el.canvas.width + el.canvas.height) / 2;
 
         var texture = null;
         try {
@@ -848,8 +852,11 @@
     function exportQuality() {
         if (!el.jpegAfter.checked) return DEFAULT_SAVE_QUALITY;
 
+        /* 0 is the slider's minimum and a real choice, so only a value that is
+         * not a number falls back: a truthiness test exports a user's lowest
+         * setting at 0.8 and says nothing about it. */
         var parsed = parseFloat(el.jpegQuality.value);
-        return parsed ? parsed : DEFAULT_SAVE_QUALITY;
+        return isFinite(parsed) ? parsed : DEFAULT_SAVE_QUALITY;
     }
 
     function exportImage() {
