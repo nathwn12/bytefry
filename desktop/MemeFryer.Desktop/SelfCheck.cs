@@ -63,7 +63,7 @@ internal static class SelfCheck
                 if (chrome.Plan.DarkTitleBar)
                 {
                     Add(checks, "DWM accepted the dark title bar",
-                        chrome.DarkModeAccepted && chrome.DarkModeObserved == 1,
+                        chrome.DarkModeAccepted && chrome.DarkModeObserved != 0,
                         $"{chrome.Detail}; read back {chrome.DarkModeObserved?.ToString() ?? "(not queryable)"}");
                 }
                 else
@@ -81,7 +81,7 @@ internal static class SelfCheck
                 // must be safe and must leave the caption where the first call put it.
                 var again = WindowChrome.Apply(host.Handle);
                 Add(checks, "the caption can be applied again without changing it",
-                    again.Plan == chrome.Plan && (!again.Plan.DarkTitleBar || again.DarkModeObserved == 1),
+                    again.Plan == chrome.Plan && (!again.Plan.DarkTitleBar || again.DarkModeObserved != 0),
                     again.Detail);
             }
 

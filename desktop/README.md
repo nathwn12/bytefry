@@ -93,20 +93,21 @@ that appears after the name was chosen, a free name that must stay free on failu
 location and the cleanup, a replacement that must keep the destination's own metadata, an attribute
 that refuses the replacement, an existing folder as the target, the staging file's own ACL and the
 folder permissions a created file gets back, a declined confirmation, and a file changed or swapped
-after the confirmation), the packaging invariants, the native caption (which build gets which DWM
+after the confirmation), the packaging invariants, the native caption, and the host's command line
+(`--help` → 0, `--selfcheck` without a path → 64, missing app bundle → 2 — all three returns happen
+before a window exists). The caption checks are the ones worth naming: which build gets which DWM
 attribute, both high-contrast decisions, the COLORREF byte order, the palette agreement with
-`app/styles.css`, an absent window handle, and the fact that no host source ever draws its own frame),
-and the host's command line (`--help` → 0,
-`--selfcheck` without a path → 64, missing app bundle → 2 — all three returns happen before a window
-exists).
+`app/styles.css`, an absent window handle, the attribute a legacy build is read back through, the
+effect path driven against a DWM that refuses one call, one colour or the readback, and the fact that
+no host source ever draws its own frame.
 
 `Bytefry.exe --selfcheck <report.json>` is the end-to-end route: real WebView2 environment, virtual
 host, injected bridge, message round trip, real file write, real navigation guard, and the caption —
 that the window still carries `WS_CAPTION`, `WS_SYSMENU`, `WS_MINIMIZEBOX`, `WS_MAXIMIZEBOX` and
-`WS_THICKFRAME`, that DWM accepted the dark flag (it is the one attribute DWM answers a query for, so
-the report carries the value it read back), that it accepted both colours, and that asking twice
-lands the same place. It needs a real window
-for WebView2 to compose, so it parks one at `-32000,-32000`, out of the taskbar and never activated
+`WS_THICKFRAME`, that DWM accepted the dark flag (the one attribute it also answers a query for, so
+the report carries the value it read back wherever that query is answered), that it accepted both
+colours, and that asking twice lands the same place. It needs a real window for WebView2 to compose,
+so it parks one at `-32000,-32000`, out of the taskbar and never activated
 (`WS_EX_NOACTIVATE`): nothing is visible and no focus is taken, but **it is off-screen, not headless** —
 a window object does exist. It is therefore opt-in via `-Verify` and never run by `test.ps1`.
 
@@ -197,12 +198,16 @@ paints, sizes or hit-tests the non-client area — the suite fails if `FormBorde
   contrast is not overridden — it is the boundary of the feature.
 - The colours are not transcribed by hand: `desktop/tests` reads `--panel` and `--text` out of
   `app/styles.css` and fails if the host's pair and the page's have moved apart.
+- The fill and its text colour are one decision, not two: if either DWM call is refused, both are set
+  back to `DWMWA_COLOR_DEFAULT`, because a fill the app chose under text Windows chose (or the
+  reverse) is a title nobody can read.
 - Applied on every `HandleCreated` — Windows recreates the handle when it reparents the form, and a
   new handle starts with the default caption — and again on `WM_SETTINGCHANGE`, so a light/dark,
   high-contrast or accent change does not need a restart.
-- Failure is never fatal: a refused `DwmSetWindowAttribute` or an unreachable `dwmapi.dll` is traced
-  and the window keeps the caption Windows gave it. `--selfcheck` fails when DWM refused a caption it
-  was asked for, and records the reason when the caption is deliberately left to the system.
+- Failure is never fatal: a refused `DwmSetWindowAttribute`, a refused readback or an unreachable
+  `dwmapi.dll` is traced and the window keeps the caption Windows gave it. `--selfcheck` fails when
+  DWM refused a caption it was asked for, records a refused readback as no evidence rather than a
+  failure, and records the reason when the caption is deliberately left to the system.
 
 ## What the save can and cannot promise
 

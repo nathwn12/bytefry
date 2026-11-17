@@ -1157,6 +1157,113 @@ internal static class Program
             Runner.Require(result.Plan.Reason.Length > 0, "the refusal carries no reason");
         });
 
+        runner.Check("no handle means no DWM call at all", () =>
+        {
+            var dwm = new FakeDwm();
+            var plan = WindowChrome.Decide(new Version(10, 0, 26100, 0), highContrast: false);
+            WindowChrome.Apply(IntPtr.Zero, plan, dwm);
+
+            Runner.Require(dwm.Calls.Count == 0, $"an absent window still produced calls: {string.Join(", ", dwm.Calls)}");
+        });
+
+        // ---------------------------------------------------------------- the effects
+
+        runner.Check("a legacy build is set and read back through the attribute it set", () =>
+        {
+            // Windows 10 1809-1909 honour attribute 19. Asking them for 20 afterwards answers for an
+            // attribute this build never set, so the evidence would be about the wrong number.
+            var plan = WindowChrome.Decide(new Version(10, 0, 18363, 0), highContrast: false);
+            var dwm = new FakeDwm();
+            var result = WindowChrome.Apply(new IntPtr(1), plan, dwm);
+
+            Runner.Require(dwm.Calls.Contains("set 19=0x00000001"),
+                $"the dark caption was not set on attribute 19: {string.Join(", ", dwm.Calls)}");
+            Runner.Require(dwm.Calls.Contains("get 19"),
+                $"the readback did not query attribute 19: {string.Join(", ", dwm.Calls)}");
+            Runner.Require(!dwm.Calls.Any(call => call.StartsWith("get 20", StringComparison.Ordinal)),
+                $"the readback queried attribute 20 on a build that set 19: {string.Join(", ", dwm.Calls)}");
+            Runner.Require(result.DarkModeObserved == 1, $"the readback did not report the value it read: {result.DarkModeObserved}");
+        });
+
+        runner.Check("a documented build is read back through attribute 20", () =>
+        {
+            var plan = WindowChrome.Decide(new Version(10, 0, 26100, 0), highContrast: false);
+            var dwm = new FakeDwm();
+            var result = WindowChrome.Apply(new IntPtr(1), plan, dwm);
+
+            Runner.Require(dwm.Calls.Contains("get 20"), $"the readback did not query attribute 20: {string.Join(", ", dwm.Calls)}");
+            Runner.Require(result.DarkModeObserved == 1, "the value DWM answered was not published");
+        });
+
+        runner.Check("a refused caption colour hands both colours back to the system", () =>
+        {
+            // A caption fill that lands without its text colour, or the reverse, is a title nobody can
+            // read. The pair is committed together or handed back together.
+            foreach (var refused in new[] { 35, 36 })
+            {
+                var plan = WindowChrome.Decide(new Version(10, 0, 26100, 0), highContrast: false);
+                var dwm = new FakeDwm { SetResult = attribute => attribute == refused ? unchecked((int)0x80070057) : 0 };
+                var result = WindowChrome.Apply(new IntPtr(1), plan, dwm);
+
+                Runner.Require(!result.CaptionAccepted, $"attribute {refused} was reported as accepted");
+
+                var colors = dwm.Calls.Where(call => call.StartsWith("set 35", StringComparison.Ordinal) ||
+                                                     call.StartsWith("set 36", StringComparison.Ordinal)).ToList();
+                Runner.Require(colors.Count >= 4,
+                    $"with attribute {refused} refused, the pair was not handed back: {string.Join(", ", dwm.Calls)}");
+                Runner.Require(colors[^1].Contains("0xFFFFFFFF", StringComparison.Ordinal) &&
+                               colors[^2].Contains("0xFFFFFFFF", StringComparison.Ordinal),
+                    $"the last two colour calls are not both the system default: {string.Join(", ", dwm.Calls)}");
+                Runner.Require(result.Detail.Contains("system", StringComparison.OrdinalIgnoreCase),
+                    $"the report does not say the colours went back to the system: {result.Detail}");
+            }
+        });
+
+        runner.Check("high contrast hands both colours back even when the plan asks for none", () =>
+        {
+            var plan = WindowChrome.Decide(new Version(10, 0, 26100, 0), highContrast: true);
+            var dwm = new FakeDwm();
+            var result = WindowChrome.Apply(new IntPtr(1), plan, dwm);
+
+            var colors = dwm.Calls.Where(call => call.StartsWith("set 3", StringComparison.Ordinal)).ToList();
+            Runner.Require(colors.Count == 2, $"high contrast made {colors.Count} colour calls, expected 2");
+            Runner.Require(colors.All(call => call.Contains("0xFFFFFFFF", StringComparison.Ordinal)),
+                $"high contrast did not clear both colours: {string.Join(", ", colors)}");
+            Runner.Require(dwm.Calls.Contains("set 20=0x00000000"), "high contrast still asked for a dark caption");
+            Runner.Require(result.CaptionAccepted, "the clears were refused, which the report must not hide");
+        });
+
+        runner.Check("an unreachable dwmapi is reported, never thrown at", () =>
+        {
+            // Both ways windows-inbox DLLs go missing by name, from every call the caption makes.
+            foreach (var missing in new[] { typeof(DllNotFoundException), typeof(EntryPointNotFoundException) })
+            {
+                var plan = WindowChrome.Decide(new Version(10, 0, 26100, 0), highContrast: false);
+                var dwm = new FakeDwm { Throw = missing };
+                var result = WindowChrome.Apply(new IntPtr(1), plan, dwm);
+
+                Runner.Require(!result.DarkModeAccepted, $"{missing.Name} from the dark caption was reported as applied");
+                Runner.Require(!result.CaptionAccepted, $"{missing.Name} from the colours was reported as applied");
+                Runner.Require(result.DarkModeObserved is null,
+                    $"{missing.Name} still produced a readback of {result.DarkModeObserved}");
+                Runner.Require(result.Detail.Contains("unavailable", StringComparison.OrdinalIgnoreCase),
+                    $"{missing.Name} is not named in the report: {result.Detail}");
+            }
+        });
+
+        runner.Check("a readback DWM cannot answer is reported as no evidence, not a failure", () =>
+        {
+            var plan = WindowChrome.Decide(new Version(10, 0, 26100, 0), highContrast: false);
+            var dwm = new FakeDwm { GetResult = _ => (unchecked((int)0x80070057), 0) };
+            var result = WindowChrome.Apply(new IntPtr(1), plan, dwm);
+
+            Runner.Require(result.DarkModeAccepted, "a refused query was reported as a refused caption");
+            Runner.Require(result.DarkModeObserved is null, $"a refused query reported {result.DarkModeObserved}");
+            Runner.Require(result.Detail.Contains("read back", StringComparison.OrdinalIgnoreCase) ||
+                           result.Detail.Contains("quer", StringComparison.OrdinalIgnoreCase),
+                $"the report does not say the readback was refused: {result.Detail}");
+        });
+
         runner.Check("an absent window cannot pass the native-caption check", () =>
         {
             // The gate the self-check reads has to be able to go red, or it proves nothing.
@@ -1215,6 +1322,38 @@ internal static class Program
 
         Runner.Require(match.Success, $"app/styles.css no longer declares {token}");
         return ColorTranslator.FromHtml(match.Groups[1].Value);
+    }
+
+    /// <summary>
+    /// A DWM that answers what a test needs and records every call in the order it was made, so a
+    /// refusal, a rollback or a query can be asserted rather than assumed.
+    /// </summary>
+    private sealed class FakeDwm : IDwmApi
+    {
+        internal List<string> Calls { get; } = new();
+        internal Func<int, int> SetResult { get; init; } = _ => 0;
+        internal Func<int, (int Result, int Value)> GetResult { get; init; } = _ => (0, 1);
+        internal Type? Throw { get; init; }
+
+        public int Set(IntPtr window, int attribute, int value)
+        {
+            Calls.Add($"set {attribute}=0x{value:X8}");
+            if (Throw is not null) throw Failed(Throw);
+            return SetResult(attribute);
+        }
+
+        public int Get(IntPtr window, int attribute, out int value)
+        {
+            Calls.Add($"get {attribute}");
+            value = 0;
+            if (Throw is not null) throw Failed(Throw);
+
+            var (result, answer) = GetResult(attribute);
+            value = answer;
+            return result;
+        }
+
+        private static Exception Failed(Type type) => (Exception)Activator.CreateInstance(type)!;
     }
 
     /// <summary>

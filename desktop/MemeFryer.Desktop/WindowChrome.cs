@@ -13,9 +13,10 @@ namespace MemeFryer.Desktop;
 /// would be the part of the window that goes wrong on a scaling change, a translated system or a
 /// remote session. So nothing here paints, sizes, hit-tests or removes the non-client area.
 ///
-/// The decision (what this Windows build supports, and what to ask for) is separate from the effect
-/// (the DWM calls), because the decision is the part with the fallbacks in it and the part a
-/// window-free test can hold.
+/// The decision (what this Windows build supports, and what to ask for) is separate from the effects
+/// (the DWM calls), and the effects sit behind <see cref="IDwmApi"/> so the fallbacks — a refused
+/// call, a missing dwmapi.dll, a caption colour that lands without its text colour — can be driven
+/// by the window-free suite instead of only described.
 /// </summary>
 internal static class WindowChrome
 {
@@ -92,9 +93,14 @@ internal static class WindowChrome
     /// a theme, contrast or accent change is picked up. Never throws: a refused call, or a dwmapi.dll
     /// that is not there, leaves the window with the caption Windows already gave it.
     /// </summary>
-    internal static ChromeResult Apply(IntPtr window)
+    internal static ChromeResult Apply(IntPtr window) => Apply(window, Decide(), DwmApi.Instance);
+
+    /// <summary>
+    /// The same call with the decision and the DWM behind it supplied, which is how the suite drives
+    /// every fallback this file claims. Production only ever passes the live plan and the real DWM.
+    /// </summary>
+    internal static ChromeResult Apply(IntPtr window, ChromePlan plan, IDwmApi dwm)
     {
-        var plan = Decide();
         if (window == IntPtr.Zero)
             return new ChromeResult(plan, false, false, null, "no native window handle yet");
 
@@ -103,21 +109,29 @@ internal static class WindowChrome
         var captionAccepted = true;
 
         if (plan.Supported)
-            darkAccepted = Set(window, plan.DarkModeAttribute, plan.DarkTitleBar ? 1 : 0, "dark title bar", notes);
+            darkAccepted = Set(dwm, window, plan.DarkModeAttribute, plan.DarkTitleBar ? 1 : 0, "dark title bar", notes);
 
         if (plan.SupportsCaptionColor)
         {
-            // Both calls run: a caption colour without its text colour is a title nobody can read.
-            captionAccepted =
-                Set(window, CaptionColorAttribute, ColorValue(plan.CaptionColor), "caption color", notes) &
-                Set(window, CaptionTextColorAttribute, ColorValue(plan.CaptionTextColor), "caption text color", notes);
+            var fill = Set(dwm, window, CaptionColorAttribute, ColorValue(plan.CaptionColor), "caption color", notes);
+            var text = Set(dwm, window, CaptionTextColorAttribute, ColorValue(plan.CaptionTextColor), "caption text color", notes);
+
+            // The pair is committed together or not at all: a fill the app chose under text Windows
+            // chose, or the reverse, is a title nobody can read. One refused call hands both back.
+            captionAccepted = fill && text;
+            if (!captionAccepted)
+            {
+                Set(dwm, window, CaptionColorAttribute, ColorDefault, "caption color handed back", notes);
+                Set(dwm, window, CaptionTextColorAttribute, ColorDefault, "caption text color handed back", notes);
+                notes.Add("the caption colors went back to the system");
+            }
         }
 
         // The dark-mode attribute is the one DWM will also answer for, so the readback is published
         // as evidence; a colour can only be set, never queried, so its calls' results are the proof.
-        int? observed = null;
-        if (plan.Supported && DwmGetWindowAttribute(window, DarkModeAttribute, out var value, sizeof(int)) == 0)
-            observed = value;
+        // It names the attribute this build was actually given - 19 on 1809-1909, 20 from 2004 - or
+        // the answer would be about a number that was never set here.
+        var observed = plan.Supported ? ReadBack(dwm, window, plan.DarkModeAttribute, notes) : null;
 
         return new ChromeResult(plan, darkAccepted, captionAccepted, observed, string.Join("; ", notes));
     }
@@ -158,11 +172,11 @@ internal static class WindowChrome
     private static int ColorValue(Color? color) =>
         color is { } value ? ColorTranslator.ToWin32(value) : ColorDefault;
 
-    private static bool Set(IntPtr window, int attribute, int value, string what, List<string> notes)
+    private static bool Set(IDwmApi dwm, IntPtr window, int attribute, int value, string what, List<string> notes)
     {
         try
         {
-            var result = DwmSetWindowAttribute(window, attribute, ref value, sizeof(int));
+            var result = dwm.Set(window, attribute, value);
             if (result == 0)
             {
                 notes.Add($"{what} {attribute}=0x{value:X8}");
@@ -173,7 +187,7 @@ internal static class WindowChrome
             notes.Add($"{what} {attribute} refused (0x{result:X8})");
             return false;
         }
-        catch (Exception ex) when (ex is DllNotFoundException or EntryPointNotFoundException)
+        catch (Exception ex) when (IsMissingDwm(ex))
         {
             // dwmapi.dll ships with every supported Windows; if it cannot be reached, the caption keeps
             // the colours Windows gave it and the app still starts.
@@ -183,14 +197,62 @@ internal static class WindowChrome
         }
     }
 
+    /// <summary>
+    /// DWM's answer for the dark-mode attribute on this window, or null when it will not answer.
+    /// A refused query is no evidence rather than a failure — the caption was still set — and an
+    /// unreachable dwmapi.dll gets the same fallback a refused call does.
+    /// </summary>
+    private static int? ReadBack(IDwmApi dwm, IntPtr window, int attribute, List<string> notes)
+    {
+        try
+        {
+            var result = dwm.Get(window, attribute, out var value);
+            if (result == 0) return value;
+
+            Trace.WriteLine($"[meme-fryer] title bar: read back refused: DwmGetWindowAttribute({attribute}) returned 0x{result:X8}");
+            notes.Add($"read back of {attribute} refused (0x{result:X8})");
+            return null;
+        }
+        catch (Exception ex) when (IsMissingDwm(ex))
+        {
+            Trace.WriteLine($"[meme-fryer] title bar: read back unavailable: {ex.Message}");
+            notes.Add($"read back unavailable ({ex.GetType().Name})");
+            return null;
+        }
+    }
+
+    /// <summary>A windows-inbox DLL that cannot be reached: the two ways that happens by name.</summary>
+    private static bool IsMissingDwm(Exception ex) =>
+        ex is DllNotFoundException or EntryPointNotFoundException;
+
+    [DllImport("user32.dll")]
+    private static extern IntPtr GetWindowLongPtr(IntPtr window, int index);
+}
+
+/// <summary>The DWM calls the caption needs, behind an interface so the suite can refuse them.</summary>
+internal interface IDwmApi
+{
+    int Set(IntPtr window, int attribute, int value);
+
+    int Get(IntPtr window, int attribute, out int value);
+}
+
+/// <summary>The real thing: <c>dwmapi.dll</c>, as shipped by Windows.</summary>
+internal sealed class DwmApi : IDwmApi
+{
+    internal static readonly DwmApi Instance = new();
+
+    public int Set(IntPtr window, int attribute, int value) =>
+        DwmSetWindowAttribute(window, attribute, ref value, sizeof(int));
+
+    public int Get(IntPtr window, int attribute, out int value) =>
+        DwmGetWindowAttribute(window, attribute, out value, sizeof(int));
+
     [DllImport("dwmapi.dll")]
     private static extern int DwmSetWindowAttribute(IntPtr window, int attribute, ref int value, int size);
 
     [DllImport("dwmapi.dll")]
     private static extern int DwmGetWindowAttribute(IntPtr window, int attribute, out int value, int size);
-
-    [DllImport("user32.dll")]
-    private static extern IntPtr GetWindowLongPtr(IntPtr window, int index);
 }
 
 /// <summary>
