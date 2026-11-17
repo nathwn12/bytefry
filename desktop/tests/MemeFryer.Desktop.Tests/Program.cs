@@ -842,8 +842,10 @@ internal static class Program
             var build = File.ReadAllText(buildPath);
             Runner.Require(build.Contains("'--release'", StringComparison.Ordinal),
                 "build.mjs has no --release option");
-            Runner.Require(build.Contains("-portable-${options.runtime}.zip", StringComparison.Ordinal),
-                "no portable zip asset name");
+            Runner.Require(
+                build.Contains("options.runtime === 'win-x64' ? 'x64' : 'arm64'", StringComparison.Ordinal) &&
+                build.Contains("-portable-${portableTag}.zip", StringComparison.Ordinal),
+                "no portable zip asset name, or no x64/arm64 tag for it");
             Runner.Require(build.Contains("-source.zip", StringComparison.Ordinal),
                 "no source zip asset name");
             Runner.Require(build.Contains("status', '--porcelain'", StringComparison.Ordinal),
