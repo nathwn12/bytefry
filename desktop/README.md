@@ -55,6 +55,9 @@ node desktop/build.mjs
 # installer as well: dist/installer/Bytefry-<version>-setup.exe
 node desktop/build.mjs --installer
 
+# every release asset in one command: dist/release/ - installer, portable zip, source zip
+node desktop/build.mjs --release
+
 # smaller exe that needs the .NET 10 Desktop Runtime installed
 node desktop/build.mjs --framework-dependent
 

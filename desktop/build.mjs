@@ -12,6 +12,8 @@
  *   --framework-dependent             needs the .NET 10 Desktop Runtime; small exe
  *   --no-single-file                  plain folder layout instead of one exe
  *   --installer                       compile the Inno Setup 6 installer
+ *   --release                         every release asset: the installer, a portable zip and a
+ *                                     source zip of the current commit (needs a clean worktree)
  *   --allow-missing-app               build the host shell without app/index.html
  *   --verify                          off-screen self-check against the built exe
  *   --out-root <dir>                  default desktop/dist
@@ -20,8 +22,10 @@
  *   node desktop/build.mjs
  *   node desktop/build.mjs --framework-dependent --configuration Debug
  *   node desktop/build.mjs --installer
+ *   node desktop/build.mjs --release
  */
 import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import {
   copyFileSync,
   cpSync,
@@ -54,6 +58,7 @@ const KNOWN = new Set([
   '--framework-dependent',
   '--no-single-file',
   '--installer',
+  '--release',
   '--allow-missing-app',
   '--verify',
   '--out-root',
@@ -79,6 +84,7 @@ function parseArgs(argv) {
     frameworkDependent: false,
     singleFile: true,
     installer: false,
+    release: false,
     allowMissingApp: false,
     verify: false,
     outRoot: null,
@@ -122,6 +128,8 @@ function parseArgs(argv) {
       options.singleFile = !flag();
     } else if (arg === '--installer') {
       options.installer = flag();
+    } else if (arg === '--release') {
+      options.release = flag();
     } else if (arg === '--allow-missing-app') {
       options.allowMissingApp = flag();
     } else if (arg === '--verify') {
@@ -135,19 +143,144 @@ function parseArgs(argv) {
   return options;
 }
 
-function run(command, args, label) {
-  const result = spawnSync(command, args, { stdio: 'inherit', windowsHide: true });
+function run(command, args, label, cwd) {
+  const options = { stdio: 'inherit', windowsHide: true };
+  if (cwd) options.cwd = cwd;
+  const result = spawnSync(command, args, options);
   if (result.error) fail(`${label ?? command} could not start: ${result.error.message}`);
   if (result.status !== 0) fail(`${label ?? command} failed with exit code ${result.status}`);
 }
 
-function capture(command, args) {
-  const result = spawnSync(command, args, {
+function capture(command, args, cwd) {
+  const options = {
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe'],
+    windowsHide: true,
+  };
+  if (cwd) options.cwd = cwd;
+  const result = spawnSync(command, args, options);
+  return { status: result.status, stdout: (result.stdout ?? '').trim() };
+}
+
+/** Runs git against the repository this script lives in, whatever the caller's directory is. */
+function git(args) {
+  const result = spawnSync('git', args, {
+    cwd: repoRoot,
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
     windowsHide: true,
   });
-  return { status: result.status, stdout: (result.stdout ?? '').trim() };
+  if (result.error) fail(`git could not start: ${result.error.message}`);
+  if (result.status !== 0) {
+    const reason = (result.stderr ?? '').trim().split(/\r?\n/)[0];
+    fail(`git ${args.join(' ')} failed${reason ? `: ${reason}` : ''}`);
+  }
+  return (result.stdout ?? '').trim();
+}
+
+/** Best effort, for BUILD-INFO: a build is not a release and must not need git. */
+function gitStamp() {
+  const head = capture('git', ['rev-parse', '--short', 'HEAD'], repoRoot);
+  if (head.status !== 0 || !head.stdout) return 'unknown';
+  const status = capture('git', ['status', '--porcelain'], repoRoot);
+  const dirty = status.status === 0 && status.stdout.length > 0;
+  return dirty ? `${head.stdout} (dirty worktree)` : head.stdout;
+}
+
+function sha256(file) {
+  return createHash('sha256').update(readFileSync(file)).digest('hex');
+}
+
+/** The archive's entry list, as Windows' bsdtar reports it. */
+function zipEntries(file) {
+  const result = spawnSync('tar.exe', ['-tf', file], {
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe'],
+    windowsHide: true,
+  });
+  if (result.error) fail(`tar.exe could not start: ${result.error.message}`);
+  if (result.status !== 0) {
+    fail(`tar.exe could not list ${basename(file)}: ${(result.stderr ?? '').trim()}`);
+  }
+  return (result.stdout ?? '').split(/\r?\n/).filter((entry) => entry.length > 0);
+}
+
+/** An entry that escapes the archive's root, or lands outside the roots we packed, is a bad asset. */
+function assertZipRoots(label, entries, roots) {
+  for (const entry of entries) {
+    if (entry.includes('\\')) fail(`${label} has a backslash in an entry: ${entry}`);
+    if (entry.startsWith('/') || /^[A-Za-z]:/.test(entry) || entry.startsWith('./')) {
+      fail(`${label} has an absolute entry path: ${entry}`);
+    }
+    if (entry.split('/').includes('..')) fail(`${label} has a traversing entry path: ${entry}`);
+    if (!roots.has(entry.split('/')[0])) {
+      fail(`${label} has an entry outside ${[...roots].join(', ')}: ${entry}`);
+    }
+  }
+}
+
+function buildPortableZip({ portable, file }) {
+  const top = readdirSync(portable).sort();
+  for (const required of ['Bytefry.exe', 'NOTICE.md', 'app']) {
+    if (!top.includes(required)) fail(`the portable folder has no ${required}: ${portable}`);
+  }
+
+  step(`packing ${basename(file)} (tar.exe -a, entries at the archive root)`);
+  rmSync(file, { force: true });
+  run('tar.exe', ['-a', '-c', '-f', file, '-C', portable, ...top], 'tar.exe');
+
+  const entries = zipEntries(file);
+  assertZipRoots(basename(file), entries, new Set(top));
+  for (const required of ['Bytefry.exe', 'NOTICE.md', 'BUILD-INFO.txt', 'app/index.html', 'app/LICENSE']) {
+    if (!entries.includes(required)) fail(`the portable zip is missing ${required}`);
+  }
+
+  // A listing proves the names, not the bytes: unpack it and compare what came back out.
+  const proof = join(desktopDir, 'obj', 'release-check');
+  rmSync(proof, { recursive: true, force: true });
+  mkdirSync(proof, { recursive: true });
+  try {
+    run('tar.exe', ['-x', '-f', file, '-C', proof], 'tar.exe');
+    for (const relative of ['Bytefry.exe', 'NOTICE.md', 'app/index.html', 'app/styles.css']) {
+      if (sha256(join(proof, relative)) !== sha256(join(portable, relative))) {
+        fail(`the portable zip does not round-trip ${relative}`);
+      }
+    }
+  } finally {
+    rmSync(proof, { recursive: true, force: true });
+  }
+}
+
+function buildSourceZip({ file, version }) {
+  const dirty = git(['status', '--porcelain']);
+  if (dirty) {
+    const lines = dirty.split(/\r?\n/).map((line) => `        ${line}`).join('\n');
+    fail(`the worktree is not clean, so a source zip of HEAD would not be the tree this build came from:\n${lines}`);
+  }
+
+  const commit = git(['rev-parse', 'HEAD']);
+  const prefix = `Bytefry-${version}/`;
+
+  step(`packing ${basename(file)} from ${commit.slice(0, 12)} (git archive)`);
+  rmSync(file, { force: true });
+  run('git', ['archive', '--format=zip', `--prefix=${prefix}`, '-o', file, 'HEAD'], 'git archive', repoRoot);
+
+  const entries = zipEntries(file);
+  for (const entry of entries) {
+    if (!entry.startsWith(prefix)) fail(`the source zip has an entry outside ${prefix}: ${entry}`);
+  }
+  for (const required of [
+    'README.md',
+    'LICENSE',
+    'app/index.html',
+    'desktop/build.mjs',
+    'desktop/tests/MemeFryer.Desktop.Tests/Program.cs',
+  ]) {
+    if (!entries.includes(prefix + required)) fail(`the source zip is missing ${required}`);
+  }
+  if (entries.some((entry) => entry.endsWith('.ps1'))) fail('the source zip carries a PowerShell script');
+
+  return commit;
 }
 
 function versionFromProject(file) {
@@ -250,12 +383,29 @@ function findIscc() {
 function main() {
   const options = parseArgs(process.argv.slice(2));
   const portable = join(options.outRoot, 'portable');
-  const installerOut = join(options.outRoot, 'installer');
+  const releaseDir = join(options.outRoot, 'release');
+  // --release compiles the installer into the folder it hands over, so one folder is the release.
+  const installerOut = options.release ? releaseDir : join(options.outRoot, 'installer');
 
   // --- preconditions ---------------------------------------------------------
   if (!existsSync(project)) fail(`project file missing: ${project}`);
   if (!existsSync(iconFile)) fail(`icon missing: ${iconFile}`);
   if (!existsSync(noticeFile)) fail(`licence notice missing: ${noticeFile}`);
+
+  // A source zip is only the tree that was built if nothing is uncommitted, so ask before the
+  // publish rather than after 48 MB of work.
+  let releaseCommit = null;
+  if (options.release) {
+    const dirty = git(['status', '--porcelain']);
+    if (dirty) {
+      const lines = dirty.split(/\r?\n/).map((line) => `    ${line}`).join('\n');
+      fail(`--release needs a clean worktree; commit or stash first:\n${lines}`);
+    }
+    releaseCommit = git(['rev-parse', 'HEAD']);
+    rmSync(releaseDir, { recursive: true, force: true });
+    mkdirSync(releaseDir, { recursive: true });
+    step(`release build from ${releaseCommit.slice(0, 12)} (worktree clean)`);
+  }
 
   const sdk = capture('dotnet', ['--version']);
   if (sdk.status !== 0 || !sdk.stdout) fail('the .NET SDK could not report its version');
@@ -335,6 +485,7 @@ function main() {
     'Bytefry desktop host',
     'licence:         GPL-3.0-only (see NOTICE.md and app\\LICENSE)',
     `version:         ${version}`,
+    `commit:          ${releaseCommit ?? gitStamp()}`,
     `built (UTC):     ${new Date().toISOString().replace('T', ' ').replace(/\.\d{3}Z$/, '')}`,
     `configuration:   ${options.configuration}`,
     `runtime:         ${options.runtime}`,
@@ -376,7 +527,8 @@ function main() {
   note(`PE machine: 0x${machine.toString(16).toUpperCase().padStart(4, '0')} (${options.runtime})`);
 
   // --- installer -------------------------------------------------------------
-  if (options.installer) {
+  let setupAsset = null;
+  if (options.installer || options.release) {
     const iscc = findIscc();
     if (!iscc) {
       fail('Inno Setup 6 compiler (ISCC.exe) not found; install Inno Setup 6 or drop --installer.');
@@ -409,7 +561,32 @@ function main() {
       .sort((left, right) => right.time - left.time);
     if (setups.length === 0) fail(`installer output missing in ${installerOut}`);
     const setup = setups[0];
-    note(`${setup.name} (${(statSync(join(installerOut, setup.name)).size / 1024 / 1024).toFixed(1)} MB)`);
+    setupAsset = join(installerOut, setup.name);
+    if (!options.release) note(`${setup.name} (${(statSync(setupAsset).size / 1024 / 1024).toFixed(1)} MB)`);
+  }
+
+  // --- release assets --------------------------------------------------------
+  //
+  // One command, three files, each checked by what it actually contains: the installer, a portable
+  // zip whose entries sit at the archive root, and a source zip of the exact commit built here.
+  if (options.release) {
+    const portableZip = join(releaseDir, `Bytefry-${version}-portable-${options.runtime}.zip`);
+    buildPortableZip({ portable, file: portableZip });
+    const sourceZip = join(releaseDir, `Bytefry-${version}-source.zip`);
+    const commit = buildSourceZip({ file: sourceZip, version });
+    if (commit !== releaseCommit) fail(`the source zip names ${commit} but this build started at ${releaseCommit}`);
+
+    const assets = [
+      ['installer', setupAsset],
+      ['portable', portableZip],
+      ['source', sourceZip],
+    ];
+    step(`release assets for ${version} at ${commit.slice(0, 12)}`);
+    for (const [label, file] of assets) {
+      if (!file || !existsSync(file)) fail(`the ${label} asset was not produced`);
+      note(`${basename(file).padEnd(46)} ${(statSync(file).size / 1024 / 1024).toFixed(1)} MB  sha256 ${sha256(file)}`);
+    }
+    note(`source commit: ${commit}`);
   }
 
   console.log('');

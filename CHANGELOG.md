@@ -5,7 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.1.3]
+
+The window's title bar is the native Windows one, painted to match the app. The host, the
+installer, the pipeline, the bridge contract, the portable layout and the licence are those of
+0.1.2. The build and test workflow is Node scripts rather than PowerShell, and one command now
+produces every release asset.
+
+### Added
+
+- The window's title bar is the native Windows caption, painted to match the app rather than
+  redrawn by it. The host asks DWM for its immersive dark mode and, on Windows 11, for the caption
+  and title colours the page's own top bar and text use. Because nothing is drawn, the drag region,
+  Snap Layouts, Alt+Space and the system menu, the buttons and the resize border stay Windows' own;
+  high contrast is left entirely to the system palette, and a Windows 10 build gets a dark caption
+  with Windows' own title colour, which is all its DWM offers. The caption fill and its title colour
+  are asked for as a pair: if either is refused, both go back to the system default.
+- `node desktop/build.mjs --release` produces all three release assets in one command: the per-user
+  installer, a portable zip whose entries sit at the archive root, and a source zip of the exact
+  HEAD commit from `git archive`. It refuses a dirty worktree, reads each archive's roots back,
+  round-trips the portable files, and prints a SHA-256 for every asset.
 
 ### Changed
 
@@ -20,22 +39,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `desktop/build.ps1`, `desktop/test.ps1`, `desktop/selfcheck-report.ps1`, `desktop/run-dev.ps1`.
 - `docs/release-0.1.0.md`, `docs/release-0.1.1.md`, `docs/release-0.1.2.md`, `docs/release-0.1.3.md`,
   `docs/naming.md`, `assets/signature.svg`.
-
-## [0.1.3]
-
-The window's title bar is the native Windows one, painted to match the app. The host, the
-installer, the pipeline, the bridge contract, the portable layout and the licence are those of
-0.1.2.
-
-### Added
-
-- The window's title bar is the native Windows caption, painted to match the app rather than
-  redrawn by it. The host asks DWM for its immersive dark mode and, on Windows 11, for the caption
-  and title colours the page's own top bar and text use. Because nothing is drawn, the drag region,
-  Snap Layouts, Alt+Space and the system menu, the buttons and the resize border stay Windows' own;
-  high contrast is left entirely to the system palette, and a Windows 10 build gets a dark caption
-  with Windows' own title colour, which is all its DWM offers. The caption fill and its title colour
-  are asked for as a pair: if either is refused, both go back to the system default.
 
 ## [0.1.2]
 

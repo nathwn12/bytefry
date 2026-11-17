@@ -9,10 +9,10 @@
 # build.mjs --verify, which parks an off-screen WebView2 window to compose the app -
 # is NOT run here; the last step says so out loud.
 #
-# Order matters: the provenance checks run first because they need only Node and
-# fail in seconds; desktop/test.mjs then drives dist/portable/Bytefry.exe when it
-# exists, so the publish runs before that suite, which tests the shipped
-# single-file binary rather than a framework-dependent apphost.
+# Order is provenance -> portable build -> host tests -> web tests. The provenance
+# checks need only Node and fail in seconds; the publish then produces
+# dist/portable/Bytefry.exe, so the host suite drives the shipped single-file
+# binary rather than a framework-dependent apphost.
 #
 # One command per step, on purpose: a step's shell reports only the last exit code,
 # so two commands in one block let the first failure be masked (measured here:

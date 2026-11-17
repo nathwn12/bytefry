@@ -38,7 +38,6 @@ point is being dragged, so a half-finished canvas is never encoded. The full key
 - Microsoft Edge WebView2 Runtime, which Windows 11 already has.
 - The default build needs no .NET runtime: .NET 10 travels inside the executable.
 - To build: the .NET SDK 10, and Inno Setup 6 only for the installer.
-- For the web-layer suite: Node 22 or newer.
 - Nothing is code-signed, so SmartScreen warns on a fresh download, and there is no auto-update.
 - The first launch of the single-file build is slower: the native WebView2 loader is extracted into the .NET cache on first run.
 
@@ -47,6 +46,7 @@ point is being dragged, so a half-finished canvas is never encoded. The full key
 ```sh
 node desktop/build.mjs                # desktop/dist/portable/Bytefry.exe with app/ beside it
 node desktop/build.mjs --installer    # plus desktop/dist/installer/Bytefry-<version>-setup.exe
+node desktop/build.mjs --release      # installer, portable zip and source zip in desktop/dist/release/
 node desktop/build.mjs --verify       # the same build plus the off-screen self-check
 node desktop/test.mjs                 # window-free suite: bridge, injected script, packaging, CLI
 node desktop/run-dev.mjs              # debug host against the source tree (opens a window)
@@ -59,8 +59,10 @@ python desktop/MemeFryer.Desktop/Assets/make-icon.py --check   # the .ico is a f
 `node tests/run.mjs` is the gate: no wall-clock assertions, so a busy machine cannot turn it red.
 `node tests/bench.mjs` measures instead, and fails only on a byte difference. `--verify` needs a real
 window for WebView2 to compose, so it parks one outside every monitor and never activates it: nothing
-is visible, but it is off-screen rather than headless, which is why it stays opt-in. The icon check
-needs Python with Pillow and numpy; nothing else does.
+is visible, but it is off-screen rather than headless, which is why it stays opt-in. Node 22 or newer
+runs the web-layer suite and `desktop/test.mjs`; the icon check needs Python with Pillow and numpy,
+and nothing else here needs either. `node desktop/build.mjs --release` produces all three release
+assets and prints their SHA-256 values.
 
 ## Status
 

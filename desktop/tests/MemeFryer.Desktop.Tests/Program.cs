@@ -837,6 +837,27 @@ internal static class Program
             Runner.Require(gate.Contains("refusing to trust", StringComparison.Ordinal), "exit code and report are not cross-checked");
         });
 
+        runner.Check("the release build names three assets from a clean commit and proves each", () =>
+        {
+            var build = File.ReadAllText(buildPath);
+            Runner.Require(build.Contains("'--release'", StringComparison.Ordinal),
+                "build.mjs has no --release option");
+            Runner.Require(build.Contains("-portable-${options.runtime}.zip", StringComparison.Ordinal),
+                "no portable zip asset name");
+            Runner.Require(build.Contains("-source.zip", StringComparison.Ordinal),
+                "no source zip asset name");
+            Runner.Require(build.Contains("status', '--porcelain'", StringComparison.Ordinal),
+                "a dirty worktree is not refused");
+            Runner.Require(build.Contains("'--format=zip'", StringComparison.Ordinal) &&
+                build.Contains("--prefix=${prefix}", StringComparison.Ordinal),
+                "the source zip is not a git archive under one root");
+            Runner.Require(build.Contains("assertZipRoots(", StringComparison.Ordinal) &&
+                build.Contains("zipEntries(", StringComparison.Ordinal),
+                "the archives' roots are never read back");
+            Runner.Require(build.Contains("sha256(", StringComparison.Ordinal),
+                "the assets are not hashed for the report");
+        });
+
         runner.Check("the build never writes into the app lane's folder", () =>
         {
             // app/ is owned by another lane, so every mention of appSrc in the build has to be a
