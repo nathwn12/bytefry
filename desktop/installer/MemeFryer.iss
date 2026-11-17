@@ -1,6 +1,6 @@
 ; Bytefry — Inno Setup 6 script (per-user install, no elevation).
 ; Compile with desktop/build.ps1 -Installer, or directly:
-;   ISCC.exe /DMyAppVersion=0.1.1 /DSourceDir=..\dist\portable /DOutDir=..\dist\installer MemeFryer.iss
+;   ISCC.exe /DMyAppVersion=0.1.2 /DSourceDir=..\dist\portable /DOutDir=..\dist\installer MemeFryer.iss
 ;
 ; The script file keeps its pre-rename name; the product it builds, installs and uninstalls is Bytefry.
 

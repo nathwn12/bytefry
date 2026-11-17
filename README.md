@@ -113,7 +113,8 @@ icon check needs Python with Pillow and numpy; nothing else here does.
 | [`app/README.md`](app/README.md) | the web layer: the pipeline order, the keys, the offline rules, the bridge calls it makes |
 | [`desktop/README.md`](desktop/README.md) | the host: bridge contract v1, host policy, build and packaging, what the save can and cannot promise |
 | [`docs/naming.md`](docs/naming.md) | Bytefry against the pre-rename names, and which of those stay and why |
-| [`docs/release-0.1.1.md`](docs/release-0.1.1.md) | 0.1.1, the current version: its assets are the stable release's, with SHA-256 values, corresponding source and checks |
+| [`docs/release-0.1.2.md`](docs/release-0.1.2.md) | 0.1.2, prepared and not yet published: what changes, and the source tag it will name |
+| [`docs/release-0.1.1.md`](docs/release-0.1.1.md) | 0.1.1, superseded when 0.1.2 is published: its assets are still the stable release's, with SHA-256 values, corresponding source and checks |
 | [`docs/release-0.1.0.md`](docs/release-0.1.0.md) | 0.1.0, superseded: what it shipped and its SHA-256 values; its page and binaries are gone, and the `v0.1.0` tag is what remains |
 | [`CHANGELOG.md`](CHANGELOG.md) | what changed in each version |
 | [`third_party/`](third_party) | the vendored CamanJS and glfx.js source, and how each shipped artifact was produced |

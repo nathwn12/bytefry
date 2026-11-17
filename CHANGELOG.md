@@ -5,7 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.1.2]
+
+Two defects in the image controls and one wrong sentence in the README, all
+found by a cold review. The host, the installer, the pipeline's order and
+constants, the bridge contract, the portable layout and the licence are those
+of 0.1.1.
 
 ### Fixed
 

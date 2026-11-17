@@ -6,7 +6,7 @@
 | Source tag | `v0.1.1` at commit `2ab8d0b0305a8421650f85e9cc8e7f6446724ed6`, immutable |
 | Release | <https://github.com/nathwn12/bytefry/releases/tag/bytefry> — the product's stable release, whose assets are this version's |
 | Release tag | `bytefry`, on the same commit as `v0.1.1`: the version tag is the source of record, the release carries the downloads |
-| Superseded | no; this is the current version |
+| Superseded | by [`0.1.2`](release-0.1.2.md), which is prepared and not yet published; until it is, this version's assets are the stable release's |
 
 The 0.1.0 application with a redesigned icon. Deep-fry an image in a Windows window: repeat-JPEG
 crush, a WebGL bulge and five filters, all running on your machine, then save. Still no analytics,
