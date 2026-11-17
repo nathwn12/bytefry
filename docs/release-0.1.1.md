@@ -206,6 +206,7 @@ and the shipped executable reports its own version.
       successful `-Installer` build, all before the release — see *Checks*.
 - [ ] `-Verify`: no receipt in either the publication-day record or the re-run, so the native window and
       the dialogs remain unverified rather than checked.
-- [ ] Release notes name the tag as the Corresponding Source: missing from the 0.1.1 notes, where the
-      0.1.0 notes do name it. The tag's own source archives are on the release page either way, so the
-      licence condition is met; the sentence is simply absent.
+- [x] Release notes name the tag as the Corresponding Source: the body carries a `Corresponding source:`
+      line pointing at <https://github.com/nathwn12/bytefry/tree/v0.1.1>, the tree of the tagged commit
+      `2ab8d0b`, as the 0.1.0 notes name the `v0.1.0` tag. The tag's own source archives are on the
+      release page too.
