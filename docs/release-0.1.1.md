@@ -2,11 +2,11 @@
 
 | | |
 |---|---|
-| Published | 2026-11-16, 19:35 UTC, on a release page at tag `v0.1.1`; that page has since been replaced by the stable release below |
+| Published | 2026-11-16, 19:35 UTC, on a release page at tag `v0.1.1`; that page was replaced by the stable release, which carried this version's assets until 2026-11-17 |
 | Source tag | `v0.1.1` at commit `2ab8d0b0305a8421650f85e9cc8e7f6446724ed6`, immutable |
-| Release | <https://github.com/nathwn12/bytefry/releases/tag/bytefry> — the product's stable release, whose assets are this version's |
-| Release tag | `bytefry`, on the same commit as `v0.1.1`: the version tag is the source of record, the release carries the downloads |
-| Superseded | by [`0.1.2`](release-0.1.2.md), which is prepared and not yet published; until it is, this version's assets are the stable release's |
+| Release | <https://github.com/nathwn12/bytefry/releases/tag/bytefry> - the product's stable release; it carried this version's three downloads until 2026-11-17, when 0.1.2's replaced them |
+| Release tag | `bytefry`, on the same commit as `v0.1.1`: the version tag is the source of record, the release carries the downloads; it has not moved |
+| Superseded | by [`0.1.2`](release-0.1.2.md), published 2026-11-17; this version's three downloads are gone, and its tag and the digests below are what remain |
 
 The 0.1.0 application with a redesigned icon. Deep-fry an image in a Windows window: repeat-JPEG
 crush, a WebGL bulge and five filters, all running on your machine, then save. Still no analytics,
@@ -53,13 +53,16 @@ executable, so the machine needs no separate .NET install.
 
 ## Released assets
 
-Built from the tagged commit; these are the names, bytes and digests the stable release carries, each one
-downloaded from `https://github.com/nathwn12/bytefry/releases/download/bytefry/<asset name>`. The zip name
-differs from 0.1.0's: that release shipped `Bytefry-0.1.0-portable-x64-release.zip`, and this one ships
+Built from the tagged commit; these are the names, bytes and digests this version's assets had while they
+were the stable release's, each one downloaded from
+`https://github.com/nathwn12/bytefry/releases/download/bytefry/<asset name>` at the time. On 2026-11-17 all
+three were replaced by 0.1.2's, so none of those URLs resolves now: the table is the record of what was
+attached, not a live download. The zip name differs from 0.1.0's: that release shipped
+`Bytefry-0.1.0-portable-x64-release.zip`, and this one shipped
 `Bytefry-0.1.1-portable-x64.zip`. Internal names that keep the pre-rename spelling are listed in
 [`naming.md`](naming.md).
 
-| Asset | Bytes | SHA-256 |
+| Asset (no longer downloadable) | Bytes | SHA-256 |
 |---|---|---|
 | `Bytefry-0.1.1-setup.exe` | 44724689 | `0530bdac4e0c93318819883fcf6ffabb98e12f3c4d49499c1dc1875fe04e509b` |
 | `Bytefry-0.1.1-portable-x64.zip` | 44222681 | `35ccaa08db3e26b55d0e4ca273e21e084133eaa0e66051062012647b5acc9933` |
@@ -83,9 +86,9 @@ on the same commit, and no binary is uploaded without it.
 
 | What | How it is delivered | Notes |
 |---|---|---|
-| Corresponding Source for `v0.1.1` | The source archive GitHub generates for the release's tag, offered on the stable release page (`Source code (zip)` and `Source code (tar.gz)`), and the `v0.1.1` tag itself in this repository: <https://github.com/nathwn12/bytefry/tree/v0.1.1> | The release tag `bytefry` and the version tag `v0.1.1` are commit `2ab8d0b`, so the page's archives and the version tag are the same tree |
-| Curated archive | `Bytefry-0.1.1-source.zip` on the stable release page — 364182 bytes, SHA-256 in *Released assets* above | Built from the tag with `git archive --format=zip --prefix=Bytefry-0.1.1/ v0.1.1`. The same tree as the tag archive, with nothing added or left out beyond the `--prefix` directory |
-| Rebuild route | `pwsh -File desktop/build.ps1 -Installer` from the root of the extracted archive | Needs the .NET SDK 10 and Inno Setup 6; produces an equivalent setup and portable folder, not a byte-identical reproduction — see below |
+| Corresponding Source for `v0.1.1` | The source archive GitHub generates for the release's tag, offered on the stable release page (`Source code (zip)` and `Source code (tar.gz)`), and the `v0.1.1` tag itself in this repository: <https://github.com/nathwn12/bytefry/tree/v0.1.1> | The release tag `bytefry` and the version tag `v0.1.1` are commit `2ab8d0b`, so the page's archives and the version tag are the same tree. That still holds after 0.1.2: the release tag did not move, so those two generated archives are still this tree |
+| Curated archive | `Bytefry-0.1.1-source.zip` - 364182 bytes, SHA-256 in *Released assets* above. No longer available: it sat on the stable release page until 2026-11-17, when 0.1.2's assets replaced it | Built from the tag with `git archive --format=zip --prefix=Bytefry-0.1.1/ v0.1.1`. The same tree as the tag archive, with nothing added or left out beyond the `--prefix` directory; the tag rebuilds it |
+| Rebuild route | `pwsh -File desktop/build.ps1 -Installer` from a checkout of tag `v0.1.1` | Needs the .NET SDK 10 and Inno Setup 6; produces an equivalent setup and portable folder, not a byte-identical reproduction - see below |
 
 The archive carries everything needed to rebuild the binaries:
 
@@ -186,16 +189,18 @@ Bundled unchanged:
 ## Publication record
 
 Receipts this repository can cite: the stable release exists and is published under the `nathwn12`
-account, the tags are objects in this repository, each attached asset downloads with the digest above,
-and the shipped executable reports its own version.
+account, the tags are objects in this repository, and each attached asset downloaded with the digest above
+while it was attached. The three assets themselves are no longer there: 0.1.2's replaced them on
+2026-11-17.
 
 - [x] `0.1.1` in `MemeFryer.Desktop.csproj`, `CHANGELOG.md` and this file agree, and the executable in
       the attached portable archive reports `FileVersion 0.1.1.0` and
       `ProductVersion 0.1.1+2ab8d0b…`.
 - [x] Tag `v0.1.1` pushed without moving `v0.1.0`; the binaries were attached with that tag's source
       archives and the curated source zip. They were first attached to a release page at tag `v0.1.1` —
-      that page is gone — and are attached to the stable release now; the names, sizes and SHA-256 values
-      in *Released assets* are unchanged.
+      that page is gone — and were attached to the stable release until 2026-11-17, when 0.1.2's assets
+      replaced them. The names, sizes and SHA-256 values in *Released assets* are the record of what was
+      attached; the downloads are gone.
 - [x] At publication, the 0.1.0 release stayed as published: both release pages existed and this one was
       a new release. That is no longer true: the 0.1.0 page and its assets were removed when the product
       moved to one stable release, and only its source tag remains — see [`release-0.1.0.md`](release-0.1.0.md).
@@ -212,7 +217,9 @@ and the shipped executable reports its own version.
       successful `-Installer` build, all before the release — see *Checks*.
 - [ ] `-Verify`: no receipt in either the publication-day record or the re-run, so the native window and
       the dialogs remain unverified rather than checked.
-- [x] Release notes name the tag as the Corresponding Source: the body's Download list carries a
+- [x] Release notes named the tag as the Corresponding Source: the body's Download list carried a
       `Corresponding source` bullet pointing at <https://github.com/nathwn12/bytefry/tree/v0.1.1>, the
-      tree of the tagged commit `2ab8d0b`, as the 0.1.0 notes did before their page was removed. The
-      tag's own source archives are on the release page too.
+      tree of the tagged commit `2ab8d0b`, as the 0.1.0 notes did before their page was removed. Those
+      notes no longer exist on the stable release, whose body is 0.1.2's now. What still serves this
+      version's source is the `v0.1.1` tag and the two `Source code` archives GitHub generates from the
+      release's tag, because the release tag never moved off `2ab8d0b`.

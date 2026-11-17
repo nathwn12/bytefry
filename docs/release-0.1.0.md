@@ -6,7 +6,7 @@
 | Source tag | `v0.1.0` at commit `7c694dd6374686ace6b16c8107b62fcf64b0b8c7`, immutable |
 | Release page | none — the page at tag `v0.1.0` and its assets were removed when the product moved to one stable release |
 | Available now | the source tag only: <https://github.com/nathwn12/bytefry/tree/v0.1.0> |
-| Superseded | yes, by [`0.1.1`](release-0.1.1.md), whose record names the stable release the downloads come from |
+| Superseded | yes, first by [`0.1.1`](release-0.1.1.md) and now by `0.1.2`; this version's page and downloads were removed when the product moved to one stable release, and its tag is what remains |
 
 Deep-fry an image in a Windows window: repeat-JPEG crush, a WebGL bulge and five filters, all running on
 your machine, then save. The first release is the desktop host and the rebuilt interface — no analytics,
@@ -156,7 +156,7 @@ Receipts this repository can cite: the repository and its tags exist. The releas
 shipped from has been removed, so its assets can no longer be downloaded or checked against the digests
 above.
 
-- [x] Repository `nathwn12/bytefry` exists, is private, and was created 2026-11-16 18:11 UTC, so the
+- [x] Repository `nathwn12/bytefry` exists, and was created private on 2026-11-16 18:11 UTC, so the
       tag, the issue tracker and an asset host are real.
 - [x] Tag `v0.1.0` at `7c694dd` pushed, and the binaries were attached with that tag's source archives and
       the curated source zip. That page and those files have since been removed; the SHA-256 values in

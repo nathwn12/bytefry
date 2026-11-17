@@ -32,12 +32,13 @@ the name of this build.
 
 ## The repository
 
-The repository is [`nathwn12/bytefry`](https://github.com/nathwn12/bytefry), private, and it carries two
-kinds of tag: a version tag `vX.Y.Z` is the immutable source of record for a published build, and the
-release is published under the tag `bytefry` at
-<https://github.com/nathwn12/bytefry/releases/tag/bytefry>, on commit `2ab8d0b` — the same commit as
-`v0.1.1` — carrying that version's downloads. `v0.1.0` has no release page or downloads any more; its tag
-remains. The name of a local checkout folder is not part of the product and is not recorded here.
+The repository is [`nathwn12/bytefry`](https://github.com/nathwn12/bytefry), and it carries two kinds of
+tag: a version tag `vX.Y.Z` is the immutable source of record for a published build, and the release is
+published under the tag `bytefry` at
+<https://github.com/nathwn12/bytefry/releases/tag/bytefry>, which stays on commit `2ab8d0b` - the commit
+of `v0.1.1` - while the release's assets move to each new version. It carries 0.1.2's three downloads now.
+`v0.1.0` has no release page or downloads any more; its tag remains. The name of a local checkout folder
+is not part of the product and is not recorded here.
 
 ## Leftover from an upgrade
 
