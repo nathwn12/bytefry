@@ -128,11 +128,11 @@ Re-run on 2026-11-17 from a tree that differs from tag `v0.1.1` (tree `e3f8828`)
 | Icon | `python desktop/MemeFryer.Desktop/Assets/make-icon.py --check` | ok — a fresh render of `assets/icon.svg` reproduces the committed `.ico`, and `icon.lock` agrees |
 | Window-free suite | `pwsh -File desktop/test.ps1` | all window-free checks passed: 63 passed, 0 failed, 0 skipped, plus the self-check report gate |
 | Web layer | `node tests/run.mjs` | 76 passed, 0 failed |
-| Packaging | `pwsh -File desktop/build.ps1 -Installer` | not re-run for this record; the attached assets were built from the tag |
+| Packaging | `pwsh -File desktop/build.ps1 -Installer` | not run for this record; the attached assets were built from the tag |
+| Self-check (`-Verify`) | `pwsh -File desktop/build.ps1 -Verify` | not run for this record: it parks a real window outside every monitor, so it is off-screen rather than headless |
 
-The opt-in `-Verify` self-check creates an off-screen window and is not headless, so it was not part of
-this record. Native window and Open/Save dialog behavior remain unverified under the headless-only
-constraint. Do not uninstall an existing installation as part of verification.
+`-Verify` stays opt-in and nothing here drives the native window or the Open/Save dialogs, so those
+remain unverified. Do not uninstall an existing installation as part of verification.
 
 `node tests/bench.mjs` is optional and not a gate: it prints where a load spends its time, and it fails
 only if two scripts produce different bytes, never on a timing difference. Quote its numbers only from
@@ -159,13 +159,26 @@ Bundled unchanged: CamanJS (BSD-3-Clause, 2010 Ryan LeFevre) and glfx.js (MIT, 2
 
 ## Publication record
 
-- [x] Owner approved the release text and the assets: the release page is published.
-- [x] Checks above run and recorded — see *Checks*, which notes that the recorded run is a 2026-11-17
-      re-run on the tag's tree rather than the publication-day run.
-- [x] `0.1.1` in `MemeFryer.Desktop.csproj`, `CHANGELOG.md` and this file agree, and the built executable
-      reports that version.
+Receipts this repository can cite: the release pages exist and are published under the `nathwn12`
+account, the tags are objects in this repository, and each attached asset downloads with the digest
+above.
+
+- [x] `0.1.1` in `MemeFryer.Desktop.csproj`, `CHANGELOG.md` and this file agree, and the executable in
+      the attached portable archive reports `FileVersion 0.1.1.0` and
+      `ProductVersion 0.1.1+2ab8d0b…`.
 - [x] Tag `v0.1.1` pushed without moving `v0.1.0`, and the binaries attached together with that tag's
       source archives and the curated source zip; the SHA-256 values are in *Released assets*.
-- [x] The 0.1.0 release stays as published: this is a new release, not a replacement.
-- [x] Release notes name the tag as the Corresponding Source and state that the corresponding source and
-      third-party notices are included.
+- [x] The 0.1.0 release stays as published: both release pages exist, and this one is a new release.
+- [x] Release notes state that the corresponding source and third-party notices are included.
+- [x] Five of the gate's steps were recorded by re-running them on the tagged tree — both third-party
+      verifiers, `make-icon.py --check`, `desktop/test.ps1` (63 passed, 0 failed) and
+      `node tests/run.mjs` (76 passed, 0 failed); the results are in *Checks*.
+- [ ] Owner approval of the release text and the assets: unverified. Publication under the `nathwn12`
+      account is a receipt that the page was published, not that the text and the assets were approved,
+      and no separate approval is on file that this record can cite.
+- [ ] Release notes name the tag as the Corresponding Source: missing from the 0.1.1 notes, where the
+      0.1.0 notes do name it. The tag's own source archives are on the release page either way, so the
+      licence condition is met; the sentence is simply absent.
+- [ ] Packaging: not run for this record, so the attached binaries are not verified by the checks above.
+- [ ] The opt-in `-Verify` self-check: not run for this record, so the native window and the Open/Save
+      dialogs stay unverified.

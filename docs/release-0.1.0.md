@@ -133,10 +133,17 @@ Bundled unchanged: CamanJS (BSD-3-Clause, 2010 Ryan LeFevre) and glfx.js (MIT, 2
 
 ## Publication record
 
-- [x] Owner approved the release text and the assets: the release page is published.
-- [x] Repository `nathwn12/bytefry` created (private), so the tag, the issue tracker and an asset host exist.
-- [ ] Checks above run and recorded: no output was written down for this version — see *Checks*.
-- [x] Tag `v0.1.0` pushed, and the binaries attached together with that tag's source archives and the
-      curated source zip; the SHA-256 values are in *Released assets*.
+Receipts this repository can cite: the release page exists and is published under the `nathwn12`
+account, the tag is an object in this repository, and each attached asset downloads with the digest
+above.
+
+- [x] Repository `nathwn12/bytefry` exists, is private, and was created 2026-11-16 18:11 UTC, so the
+      tag, the issue tracker and an asset host are real.
+- [x] Tag `v0.1.0` at `7c694dd` pushed, and the binaries attached together with that tag's source
+      archives and the curated source zip; the SHA-256 values are in *Released assets*.
 - [x] Release notes name the tag as the Corresponding Source and state that the upstream credits and
       third-party notices are included.
+- [ ] Owner approval of the release text and the assets: unverified. Publication under the `nathwn12`
+      account is a receipt that the page was published, not that the text and the assets were approved,
+      and no separate approval is on file that this record can cite.
+- [ ] Checks run and recorded: no output was written down for this version — see *Checks*.
