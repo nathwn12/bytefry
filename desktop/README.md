@@ -10,7 +10,7 @@ the build copies it into the distributable.
 
 | | |
 |---|---|
-| Host version | 0.1.2 (`MemeFryer.Desktop.csproj`); the executable is `Bytefry.exe` |
+| Host version | 0.1.3 (`MemeFryer.Desktop.csproj`); the executable is `Bytefry.exe` |
 | Target | `net10.0-windows`, WinForms, x64 |
 | Embedded engine | `Microsoft.Web.WebView2` 1.0.4314.35 (NuGet, pinned) |
 | Runtime requirement | Microsoft Edge WebView2 Runtime (present on Windows 11; `157.0.4341.46` on the build machine) |
@@ -26,6 +26,7 @@ desktop/
     Bridge.cs                 request/reply host for open/save/copy
     AtomicSave.cs             temp-file-then-rename save: a failed write cannot truncate the target
     BridgeScript.cs           the injected JS half of the bridge (contract v1)
+    WindowChrome.cs           the native caption: DWM colours, never a drawn title bar
     SelfCheck.cs              off-screen verification, off-screen window, report writer
     AppPaths.cs               app folder, user-data folder, virtual host name
     app.manifest              per-monitor DPI, asInvoker, long paths
@@ -51,7 +52,7 @@ pwsh -File desktop/test.ps1
 # portable build: dist\portable\Bytefry.exe + dist\portable\app\  (self-contained, single file)
 pwsh -File desktop/build.ps1
 
-# installer as well: dist\installer\Bytefry-0.1.2-setup.exe
+# installer as well: dist\installer\Bytefry-0.1.3-setup.exe
 pwsh -File desktop/build.ps1 -Installer
 
 # smaller exe that needs the .NET 10 Desktop Runtime installed
@@ -92,18 +93,28 @@ that appears after the name was chosen, a free name that must stay free on failu
 location and the cleanup, a replacement that must keep the destination's own metadata, an attribute
 that refuses the replacement, an existing folder as the target, the staging file's own ACL and the
 folder permissions a created file gets back, a declined confirmation, and a file changed or swapped
-after the confirmation), the packaging invariants, and the host's command line (`--help` → 0,
-`--selfcheck` without a path → 64, missing app bundle → 2 — all three returns happen before a window
-exists).
+after the confirmation), the packaging invariants, the native caption, and the host's command line
+(`--help` → 0, `--selfcheck` without a path → 64, missing app bundle → 2 — all three returns happen
+before a window exists). The caption checks are the ones worth naming: which build gets which DWM
+attribute, both high-contrast decisions, the COLORREF byte order, the palette agreement with
+`app/styles.css`, an absent window handle, the attribute a legacy build is read back through, the
+effect path driven against a DWM that refuses one call, one colour or the readback, and the fact that
+no host source ever draws its own frame.
 
 `Bytefry.exe --selfcheck <report.json>` is the end-to-end route: real WebView2 environment, virtual
-host, injected bridge, message round trip, real file write, real navigation guard. It needs a real window
-for WebView2 to compose, so it parks one at `-32000,-32000`, out of the taskbar and never activated
+host, injected bridge, message round trip, real file write, real navigation guard, and the caption —
+that the window still carries `WS_CAPTION`, `WS_SYSMENU`, `WS_MINIMIZEBOX`, `WS_MAXIMIZEBOX` and
+`WS_THICKFRAME`, that DWM accepted the dark flag (the one attribute it also answers a query for, so
+the report carries the value it read back wherever that query is answered), that it accepted both
+colours, and that asking twice lands the same place. It needs a real window for WebView2 to compose,
+so it parks one at `-32000,-32000`, out of the taskbar and never activated
 (`WS_EX_NOACTIVATE`): nothing is visible and no focus is taken, but **it is off-screen, not headless** —
 a window object does exist. It is therefore opt-in via `-Verify` and never run by `test.ps1`.
 
-Two things no automated check here establishes: how the rendered pixels look, and how the native
-Open/Save dialogs render — a dialog is a separate native window. Both need a human look.
+Three things no automated check here establishes: how the rendered pixels look, how the native
+Open/Save dialogs render (a dialog is a separate native window), and how the caption looks when it is
+hovered, focused, inactive, maximised, mirrored for a right-to-left system, or pushed through a remote
+session. The caption's *acceptance* is checked; its *appearance* is a human look at a screenshot.
 
 `-Verify` trusts nothing but a report that exists, parses, says `passed=true`, has at least one check,
 has no failing check, and agrees with a zero exit code (`selfcheck-report.ps1`). `test.ps1` feeds that
@@ -161,6 +172,42 @@ Notes both lanes depend on:
   source tree to the repo root that holds `app\` beside `desktop\`.
 - One process, one window, `asInvoker`. No registry writes, no services, no scheduled tasks. The
   per-user Apps & Features entry belongs to the installer, not to the host.
+
+## The title bar
+
+Bytefry does not draw a title bar. The window keeps the native Windows caption and the host only asks
+DWM for colours, so the drag region, double-click to maximise, Snap Layouts, Alt+Space and the system
+menu, the minimise and maximise buttons, the resize border, high-contrast painting and everything
+Windows' automation exposes for a caption are Windows' own code. A drawn title bar is the part of a
+custom-chrome window that quietly loses those, and nothing here could check off-screen that the
+replacement worked. `WindowChrome.cs` is the whole of it: `MainForm` calls it, and no host source
+paints, sizes or hit-tests the non-client area — the suite fails if `FormBorderStyle`,
+`NCCALCSIZE`, `WM_NCHITTEST` or `DwmExtendFrameIntoClientArea` ever appears.
+
+| Windows | What is asked for |
+|---|---|
+| 11, build 22000+ | `DWMWA_USE_IMMERSIVE_DARK_MODE` (20) with `DWMWA_CAPTION_COLOR` (35) and `DWMWA_TEXT_COLOR` (36), set to the app's own `--panel` `#0e131a` and `--text` `#e7eef7` |
+| 10 2004+, build 18985+ | attribute 20 only: a dark caption, with Windows' own frame and title colour |
+| 10 1809–1909, build 17763+ | attribute 19, the same flag before it was given a public number |
+| older | nothing at all: the caption stays as Windows drew it |
+| any build, high contrast on | no colours: the system palette owns the caption. On Windows 11 the colour attributes are set to `DWMWA_COLOR_DEFAULT`, so a caption coloured before high contrast was switched on is handed back rather than left behind |
+
+- A dark caption is asked for even when Windows is in light mode, because the app is dark-only. That
+  also overrides the Personalization setting that puts the accent colour on title bars: a bar in the
+  system accent above a slate header is the one thing this deliberately does not honour. High
+  contrast is not overridden — it is the boundary of the feature.
+- The colours are not transcribed by hand: `desktop/tests` reads `--panel` and `--text` out of
+  `app/styles.css` and fails if the host's pair and the page's have moved apart.
+- The fill and its text colour are one decision, not two: if either DWM call is refused, both are set
+  back to `DWMWA_COLOR_DEFAULT`, because a fill the app chose under text Windows chose (or the
+  reverse) is a title nobody can read.
+- Applied on every `HandleCreated` — Windows recreates the handle when it reparents the form, and a
+  new handle starts with the default caption — and again on `WM_SETTINGCHANGE`, so a light/dark,
+  high-contrast or accent change does not need a restart.
+- Failure is never fatal: a refused `DwmSetWindowAttribute`, a refused readback or an unreachable
+  `dwmapi.dll` is traced and the window keeps the caption Windows gave it. `--selfcheck` fails when
+  DWM refused a caption it was asked for, records a refused readback as no evidence rather than a
+  failure, and records the reason when the caption is deliberately left to the system.
 
 ## What the save can and cannot promise
 
