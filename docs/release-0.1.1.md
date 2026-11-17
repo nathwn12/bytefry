@@ -2,10 +2,11 @@
 
 | | |
 |---|---|
-| Published | 2026-11-16, 19:35 UTC |
-| Tag | `v0.1.1` at commit `2ab8d0b0305a8421650f85e9cc8e7f6446724ed6` |
-| Release page | <https://github.com/nathwn12/bytefry/releases/tag/v0.1.1> |
-| Superseded | no; this is the current release |
+| Published | 2026-11-16, 19:35 UTC, on a release page at tag `v0.1.1`; that page has since been replaced by the stable release below |
+| Source tag | `v0.1.1` at commit `2ab8d0b0305a8421650f85e9cc8e7f6446724ed6`, immutable |
+| Release | <https://github.com/nathwn12/bytefry/releases/tag/bytefry> — the product's stable release, whose assets are this version's |
+| Release tag | `bytefry`, on the same commit as `v0.1.1`: the version tag is the source of record, the release carries the downloads |
+| Superseded | no; this is the current version |
 
 The 0.1.0 application with a redesigned icon. Deep-fry an image in a Windows window: repeat-JPEG
 crush, a WebGL bulge and five filters, all running on your machine, then save. Still no analytics,
@@ -52,9 +53,10 @@ executable, so the machine needs no separate .NET install.
 
 ## Released assets
 
-Built from the tagged commit; these are the names, bytes and digests the release page carries. The zip
-name differs from 0.1.0's: that release shipped `Bytefry-0.1.0-portable-x64-release.zip`, and this one
-ships `Bytefry-0.1.1-portable-x64.zip`. Internal names that keep the pre-rename spelling are listed in
+Built from the tagged commit; these are the names, bytes and digests the stable release carries, each one
+downloaded from `https://github.com/nathwn12/bytefry/releases/download/bytefry/<asset name>`. The zip name
+differs from 0.1.0's: that release shipped `Bytefry-0.1.0-portable-x64-release.zip`, and this one ships
+`Bytefry-0.1.1-portable-x64.zip`. Internal names that keep the pre-rename spelling are listed in
 [`naming.md`](naming.md).
 
 | Asset | Bytes | SHA-256 |
@@ -76,13 +78,13 @@ How each one is produced:
 GPL-3.0-only section 6 requires that a binary be accompanied by its Corresponding Source, conveyed
 either alongside it or from a network server at the same place; section 1 defines that source as the
 preferred form plus the scripts used to control compilation and installation. So this release rides on
-a tag: the tag is the source, the same release page serves the tag's source archive, and no binary is
-uploaded without it.
+a tag: the version tag is the source of record, the stable release serves its own tag's source archive
+on the same commit, and no binary is uploaded without it.
 
 | What | How it is delivered | Notes |
 |---|---|---|
-| Corresponding Source for `v0.1.1` | The source archive GitHub generates for that tag, offered on the same release page (`Source code (zip)` and `Source code (tar.gz)`) | Generated from the tagged commit, not from a branch; both are on the release page |
-| Curated archive | `Bytefry-0.1.1-source.zip` on the same release page — 364182 bytes, SHA-256 in *Released assets* above | Built from the tag with `git archive --format=zip --prefix=Bytefry-0.1.1/ v0.1.1`. The same tree as the tag archive, with nothing added or left out beyond the `--prefix` directory |
+| Corresponding Source for `v0.1.1` | The source archive GitHub generates for the release's tag, offered on the stable release page (`Source code (zip)` and `Source code (tar.gz)`), and the `v0.1.1` tag itself in this repository: <https://github.com/nathwn12/bytefry/tree/v0.1.1> | The release tag `bytefry` and the version tag `v0.1.1` are commit `2ab8d0b`, so the page's archives and the version tag are the same tree |
+| Curated archive | `Bytefry-0.1.1-source.zip` on the stable release page — 364182 bytes, SHA-256 in *Released assets* above | Built from the tag with `git archive --format=zip --prefix=Bytefry-0.1.1/ v0.1.1`. The same tree as the tag archive, with nothing added or left out beyond the `--prefix` directory |
 | Rebuild route | `pwsh -File desktop/build.ps1 -Installer` from the root of the extracted archive | Needs the .NET SDK 10 and Inno Setup 6; produces an equivalent setup and portable folder, not a byte-identical reproduction — see below |
 
 The archive carries everything needed to rebuild the binaries:
@@ -183,17 +185,21 @@ Bundled unchanged:
 
 ## Publication record
 
-Receipts this repository can cite: the release pages exist and are published under the `nathwn12`
+Receipts this repository can cite: the stable release exists and is published under the `nathwn12`
 account, the tags are objects in this repository, each attached asset downloads with the digest above,
 and the shipped executable reports its own version.
 
 - [x] `0.1.1` in `MemeFryer.Desktop.csproj`, `CHANGELOG.md` and this file agree, and the executable in
       the attached portable archive reports `FileVersion 0.1.1.0` and
       `ProductVersion 0.1.1+2ab8d0b…`.
-- [x] Tag `v0.1.1` pushed without moving `v0.1.0`, and the binaries attached together with that tag's
-      source archives and the curated source zip; the SHA-256 values are in *Released assets*.
-- [x] The 0.1.0 release stays as published: both release pages exist, and this one is a new release.
-- [x] Release notes state that the corresponding source and third-party notices are included.
+- [x] Tag `v0.1.1` pushed without moving `v0.1.0`; the binaries were attached with that tag's source
+      archives and the curated source zip. They were first attached to a release page at tag `v0.1.1` —
+      that page is gone — and are attached to the stable release now; the names, sizes and SHA-256 values
+      in *Released assets* are unchanged.
+- [x] At publication, the 0.1.0 release stayed as published: both release pages existed and this one was
+      a new release. That is no longer true: the 0.1.0 page and its assets were removed when the product
+      moved to one stable release, and only its source tag remains — see [`release-0.1.0.md`](release-0.1.0.md).
+- [x] Release notes state that third-party notices are included, under `License: GPL-3.0-only`.
 - [x] Five of the gate's steps were re-run for this record — both third-party verifiers,
       `make-icon.py --check`, `desktop/test.ps1` (63 passed, 0 failed) and `node tests/run.mjs`
       (76 passed, 0 failed); *Checks* gives the results and says which tree they came from.
@@ -206,7 +212,7 @@ and the shipped executable reports its own version.
       successful `-Installer` build, all before the release — see *Checks*.
 - [ ] `-Verify`: no receipt in either the publication-day record or the re-run, so the native window and
       the dialogs remain unverified rather than checked.
-- [x] Release notes name the tag as the Corresponding Source: the body carries a `Corresponding source:`
-      line pointing at <https://github.com/nathwn12/bytefry/tree/v0.1.1>, the tree of the tagged commit
-      `2ab8d0b`, as the 0.1.0 notes name the `v0.1.0` tag. The tag's own source archives are on the
-      release page too.
+- [x] Release notes name the tag as the Corresponding Source: the body's Download list carries a
+      `Corresponding source` bullet pointing at <https://github.com/nathwn12/bytefry/tree/v0.1.1>, the
+      tree of the tagged commit `2ab8d0b`, as the 0.1.0 notes did before their page was removed. The
+      tag's own source archives are on the release page too.

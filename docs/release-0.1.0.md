@@ -2,10 +2,11 @@
 
 | | |
 |---|---|
-| Published | 2026-11-16, 18:12 UTC |
-| Tag | `v0.1.0` at commit `7c694dd6374686ace6b16c8107b62fcf64b0b8c7` |
-| Release page | <https://github.com/nathwn12/bytefry/releases/tag/v0.1.0> |
-| Superseded | yes, by [`0.1.1`](release-0.1.1.md); its own release page stays as published |
+| Published | 2026-11-16, 18:12 UTC; that release page no longer exists |
+| Source tag | `v0.1.0` at commit `7c694dd6374686ace6b16c8107b62fcf64b0b8c7`, immutable |
+| Release page | none — the page at tag `v0.1.0` and its assets were removed when the product moved to one stable release |
+| Available now | the source tag only: <https://github.com/nathwn12/bytefry/tree/v0.1.0> |
+| Superseded | yes, by [`0.1.1`](release-0.1.1.md), whose record names the stable release the downloads come from |
 
 Deep-fry an image in a Windows window: repeat-JPEG crush, a WebGL bulge and five filters, all running on
 your machine, then save. The first release is the desktop host and the rebuilt interface — no analytics,
@@ -37,7 +38,9 @@ executable, so the machine needs no separate .NET install.
 
 ## Released assets
 
-Built from the tagged commit; these are the names, bytes and digests the release page carries.
+Built from the tagged commit; these were the names, bytes and digests the 0.1.0 release page carried.
+That page and those files have been removed, so the values stay here as the record of what shipped and
+none of them can be downloaded now.
 
 | Asset | Bytes | SHA-256 |
 |---|---|---|
@@ -61,16 +64,17 @@ spelling are listed in [`naming.md`](naming.md).
 
 GPL-3.0-only section 6 requires that a binary be accompanied by its Corresponding Source, conveyed either
 alongside it or from a network server at the same place; section 1 defines that source as the preferred
-form plus the scripts used to control compilation and installation. So this release rides on a tag: the tag
-is the source, the same release page serves the tag's source archive, and no binary is uploaded without it.
+form plus the scripts used to control compilation and installation. So this release rode on a tag: the
+tag is the source of record, the binaries were uploaded beside its archive, and that release page has
+since been removed. The tag is what survives.
 
 | What | How it is delivered | Notes |
 |---|---|---|
-| Corresponding Source for `v0.1.0` | The source archive GitHub generates for that tag, offered on the same release page (`Source code (zip)` and `Source code (tar.gz)`) | Generated from the tagged commit, not from a branch; both are on the release page |
-| Curated archive | `Bytefry-0.1.0-source.zip` on the same release page — 1327791 bytes, SHA-256 in *Released assets* above | Built from the same commit with `git archive --format=zip --prefix=Bytefry-0.1.0/ v0.1.0`. The same tree as the tag archive, with nothing added or left out beyond the `--prefix` directory |
-| Rebuild route | `pwsh -File desktop/build.ps1 -Installer` from the root of the extracted archive | Needs the .NET SDK 10 and Inno Setup 6; produces an equivalent setup and portable folder, not a byte-identical reproduction — see below |
+| Corresponding Source for `v0.1.0` | The `v0.1.0` tag in this repository: <https://github.com/nathwn12/bytefry/tree/v0.1.0> | Commit `7c694dd`, the tree the 0.1.0 binaries were built from. The release page that also carried GitHub's generated archives (`Source code (zip)` and `Source code (tar.gz)`) has been removed, and the tag is the source of record that remains |
+| Curated archive | `Bytefry-0.1.0-source.zip` — 1327791 bytes, SHA-256 in *Released assets* above; no longer available | Built from the same commit with `git archive --format=zip --prefix=Bytefry-0.1.0/ v0.1.0`. The same tree as the tag archive, with nothing added or left out beyond the `--prefix` directory |
+| Rebuild route | `pwsh -File desktop/build.ps1 -Installer` from the root of a checkout of tag `v0.1.0` | The extracted archive once offered for this is gone; the tag carries the same tree. Needs the .NET SDK 10 and Inno Setup 6; produces an equivalent setup and portable folder, not a byte-identical reproduction — see below |
 
-The archive carries everything needed to rebuild the binaries:
+The tag carries everything needed to rebuild the binaries:
 
 - `app/` — `index.html`, `styles.css`, `app.js`, `vendor/` (CamanJS, glfx.js), `LICENSE`, `ATTRIBUTION.md`, `README.md`.
 - `desktop/` — `MemeFryer.Desktop/` (host sources, `MemeFryer.Desktop.csproj`, `app.manifest`, `Assets/` with the icon and `make-icon.py`), `installer/MemeFryer.iss`, `build.ps1`, `test.ps1`, `selfcheck-report.ps1`, `run-dev.ps1`, `NOTICE.md`, `README.md`.
@@ -79,7 +83,7 @@ The archive carries everything needed to rebuild the binaries:
 
 Both bundled libraries have their exact source in the tag, and both ship a file that upstream published rather than one built here. For CamanJS the shipped bundle is the `dist` artifact of `caman` 4.1.2 (commit `36697e0`): after normalising line endings, `verify.mjs` matches it byte for byte. For glfx.js the shipped file is the published `gh-pages` artifact up to one header line that the upstream build tool itself changed in 2022, and upstream's `build.py` pipes the sources through whatever `closure` is on `PATH`: neither the compiler nor its version is recorded upstream, so a byte-for-byte rebuild of that bundle cannot be derived from the tree and is unverified. The artifact is pinned as a file; the source is what explains it.
 
-That has a consequence for this release: the source archive lets anyone rebuild an equivalent Bytefry, but no byte-identical output is promised — not for `glfx.js`, and not for the Windows binaries either.
+That has a consequence for this release: the tagged tree lets anyone rebuild an equivalent Bytefry, but no byte-identical output is promised — not for `glfx.js`, and not for the Windows binaries either.
 
 Not conveyed, and not part of the Corresponding Source: the .NET 10 SDK and runtime, the
 `Microsoft.Web.WebView2` package, and the WebView2 Runtime installed on the machine. They are Microsoft's
@@ -99,10 +103,10 @@ the tag, the attached source archive name and its SHA-256 are recorded in the ta
 
 ## Checks
 
-No durable receipt for this gate is on file for 0.1.0: the release page carries its notes and its
-assets, and neither that page nor this repository carries the gate's output. Whether it ran at the time
-is therefore not recorded anywhere this document can cite, and nothing here claims it passed. The
-commands are the gate and are unchanged, so they can be re-run against the tag. In order:
+No durable receipt for this gate is on file for 0.1.0: the release page it shipped from and this
+repository carried no output of it, and that page has since been removed. Whether it ran at the time is
+therefore not recorded anywhere this document can cite, and nothing here claims it passed. The commands
+are the gate and are unchanged, so they can be re-run against the tag. In order:
 
 1. `node third_party/camanjs/verify.mjs` and `node third_party/glfx/verify.mjs` — offline and
    dependency-free: they prove the shipped `app/vendor/` bytes are the pinned upstream artifacts and that
@@ -148,19 +152,21 @@ Bundled unchanged:
 
 ## Publication record
 
-Receipts this repository can cite: the release page exists and is published under the `nathwn12`
-account, the tag is an object in this repository, and each attached asset downloads with the digest
+Receipts this repository can cite: the repository and its tags exist. The release page this version
+shipped from has been removed, so its assets can no longer be downloaded or checked against the digests
 above.
 
 - [x] Repository `nathwn12/bytefry` exists, is private, and was created 2026-11-16 18:11 UTC, so the
       tag, the issue tracker and an asset host are real.
-- [x] Tag `v0.1.0` at `7c694dd` pushed, and the binaries attached together with that tag's source
-      archives and the curated source zip; the SHA-256 values are in *Released assets*.
-- [x] Release notes name the tag as the Corresponding Source and state that the upstream credits and
-      third-party notices are included.
+- [x] Tag `v0.1.0` at `7c694dd` pushed, and the binaries were attached with that tag's source archives and
+      the curated source zip. That page and those files have since been removed; the SHA-256 values in
+      *Released assets* are the record of what was attached.
+- [x] The 0.1.0 notes named the tag as the Corresponding Source and stated that the upstream credits and
+      third-party notices were included. Those notes lived on the removed page, so this record repeats
+      what they said rather than citing them.
 - [ ] Owner approval of the release text and the assets: no durable receipt. The release was published
       under the `nathwn12` account, which shows the page went out; an approval may well have been given,
-      but none is recorded in an artifact this repository or the release page carries, so this record
+      but none was recorded in an artifact this repository or the release page carried, so this record
       cannot cite one.
 - [ ] The publication-day gate, packaging included: no durable receipt on file for this version — see
       *Checks*.

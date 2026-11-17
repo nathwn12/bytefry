@@ -10,10 +10,11 @@ WinForms window around Microsoft Edge WebView2.
 ## Install
 
 Take the per-user installer or the portable x64 archive from
-[**releases**](https://github.com/nathwn12/bytefry/releases/latest). The installer needs no
-administrator rights, and it keeps its `AppId` across versions, so a newer version upgrades in place
-rather than appearing twice. The portable build is `Bytefry.exe` with its `app\` folder beside it:
-keep the two together, because the host serves that folder and nothing else.
+[**releases**](https://github.com/nathwn12/bytefry/releases/latest): one stable release, tagged `bytefry`,
+whose assets are 0.1.1's. The installer needs no administrator rights, and it keeps its `AppId` across
+versions, so a newer version upgrades in place rather than appearing twice. The portable build is
+`Bytefry.exe` with its `app\` folder beside it: keep the two together, because the host serves that
+folder and nothing else.
 
 Or build it from source:
 
@@ -110,8 +111,8 @@ icon check needs Python with Pillow and numpy; nothing else here does.
 | [`app/README.md`](app/README.md) | the web layer: the pipeline order, the keys, the offline rules, the bridge calls it makes |
 | [`desktop/README.md`](desktop/README.md) | the host: bridge contract v1, host policy, build and packaging, what the save can and cannot promise |
 | [`docs/naming.md`](docs/naming.md) | Bytefry against the pre-rename names, and which of those stay and why |
-| [`docs/release-0.1.1.md`](docs/release-0.1.1.md) | 0.1.1, the current release: assets, SHA-256 values, corresponding source, checks |
-| [`docs/release-0.1.0.md`](docs/release-0.1.0.md) | 0.1.0, superseded by 0.1.1: assets, SHA-256 values, corresponding source, checks |
+| [`docs/release-0.1.1.md`](docs/release-0.1.1.md) | 0.1.1, the current version: its assets are the stable release's, with SHA-256 values, corresponding source and checks |
+| [`docs/release-0.1.0.md`](docs/release-0.1.0.md) | 0.1.0, superseded: what it shipped and its SHA-256 values; its page and binaries are gone, and the `v0.1.0` tag is what remains |
 | [`CHANGELOG.md`](CHANGELOG.md) | what changed in each version |
 | [`third_party/`](third_party) | the vendored CamanJS and glfx.js source, and how each shipped artifact was produced |
 
@@ -130,4 +131,5 @@ maintained by one person, not a team. If it breaks,
 - Upstream: [Meme Deep Fryer](https://deepfriedmemes.com) by [Dima](https://dmitry.lol) and
   contributors, [source on GitHub](https://github.com/efskap/deepfriedmemes.com)
 - Licence: [GPL-3.0-only](LICENSE) — the upstream licence file grants version 3 and no later version,
-  so this build claims none; every release carries its corresponding source on its release page.
+  so this build claims none; the release page names its corresponding source, and each version's source
+  is its immutable `vX.Y.Z` tag in this repository.
