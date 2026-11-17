@@ -4,29 +4,27 @@
 <h1 align="center">Bytefry</h1>
 <p align="center"><strong>Deep-fry an image in a Windows window: repeat-JPEG crush, a WebGL bulge and five filters, all running on your machine, then save.</strong></p>
 
+Bytefry is a desktop build of *Meme Deep Fryer*: the original image pipeline, running offline in a
+WinForms window around Microsoft Edge WebView2.
+
 ## Install
 
-Download the Windows x64 portable archive or installer from the repository's releases, or build locally using the commands below. Keep `app\` beside the executable: the host serves that folder and nothing else.
+Take the per-user installer or the portable x64 archive from
+[**releases**](https://github.com/nathwn12/bytefry/releases/latest). The installer needs no
+administrator rights, and it keeps its `AppId` across versions, so a newer version upgrades in place
+rather than appearing twice. The portable build is `Bytefry.exe` with its `app\` folder beside it:
+keep the two together, because the host serves that folder and nothing else.
+
+Or build it from source:
 
 ```powershell
-# portable build -> desktop\dist\portable\Bytefry.exe, with app\ beside it
-pwsh -File desktop/build.ps1
-
-# the same build plus a per-user installer -> desktop\dist\installer\Bytefry-<version>-setup.exe
-pwsh -File desktop/build.ps1 -Installer
+pwsh -File desktop/build.ps1              # desktop\dist\portable\Bytefry.exe + app\ beside it
+pwsh -File desktop/build.ps1 -Installer   # plus desktop\dist\installer\Bytefry-<version>-setup.exe
 ```
 
-The portable folder is self-contained: it carries the .NET 10 runtime inside the single executable, so the machine needs only the Microsoft Edge WebView2 Runtime. The installer ships that same payload per user.
-
-The executable, the setup file, the window title, the in-app title and the uninstall entry all say Bytefry. A few internal names keep the pre-rename spelling — the `MEME_FRYER_*` variables below, the WebView2 profile folder, `meme-fryer.local` — and [`docs/naming.md`](docs/naming.md) says which ones stay and why.
-
-### Offline or pinned
-
-Editing happens in the window, on your machine. The page declares `connect-src 'none'`, `form-action 'none'`, `object-src 'none'` and `base-uri 'none'`, so a fetch, socket or form post from the page fails instead of silently succeeding; the host cancels every navigation, new window and permission request that would leave its own virtual origin. There is no analytics, no account, no external image service and no updater of its own: the filters and the JPEG passes run in the page's canvas and WebGL context, and the image you open and the file you save are read and written by the window itself. The embedded browser engine is Windows' own WebView2 Runtime, which Microsoft updates separately from this app.
-
-- Smaller executable that needs the .NET 10 Desktop Runtime: `pwsh -File desktop/build.ps1 -FrameworkDependent`.
-- There is no feed to pin. The one version that matters is `Microsoft.Web.WebView2` in `desktop/MemeFryer.Desktop/MemeFryer.Desktop.csproj`, currently `1.0.4314.35`.
-- To run the web layer with no Windows host at all, open `app/index.html` in a Chromium-based browser. It falls back to a file input and a download link.
+Both are self-contained: the .NET 10 runtime travels inside the single executable, so the machine
+needs only the Microsoft Edge WebView2 Runtime. `-FrameworkDependent` builds a smaller executable
+that needs the .NET 10 Desktop Runtime instead, and `-Runtime win-arm64` publishes ARM64.
 
 ## Use it
 
@@ -36,25 +34,23 @@ Editing happens in the window, on your machine. The page declares `connect-src '
 4. Enable bulge, then click the image to add a point and drag it to move. Global strength and radius apply to every point.
 5. Save with `Ctrl+S`, or copy the result to the clipboard.
 
-The working canvas is capped at 800 px wide. The export is JPEG at 0.8 quality unless "after filters" is on, in which case it uses the quality slider.
+The working canvas is capped at 800 px wide. The export is JPEG at 0.8 quality unless "after
+filters" is on, in which case it uses the quality slider. Save, Copy and `Ctrl+S` refuse while a
+render is running or a point is being dragged, so a half-finished canvas is never encoded; the keys
+are in [`app/README.md`](app/README.md).
 
-| Keys | Action |
-|---|---|
-| `Ctrl+O` | open an image |
-| `Ctrl+S` | save the result |
-| `Ctrl+V` | paste an image from the clipboard |
-| arrow keys | nudge the focused bulge point by 1% of the image |
-| `Delete` | remove the focused bulge point |
-| `Enter` | re-render after a keyboard nudge |
+## Nothing leaves the machine
 
-## What you get
+The page declares `connect-src 'none'`, `form-action 'none'`, `object-src 'none'` and
+`base-uri 'none'`, so a fetch, socket or form post from it fails instead of silently succeeding, and
+the host cancels every navigation, new window and permission request that would leave its own
+virtual origin. There is no analytics, no account, no external image service and no updater: the
+filters and the JPEG passes run in the page's canvas and WebGL context, and the image you open and
+the file you save are read and written by the window itself. The embedded browser engine is
+Windows' own WebView2 Runtime, which Microsoft updates separately from this app.
 
-- **The original pipeline, in the original order.** Optional JPEG crush, the glfx bulge pinch over those pixels, CamanJS filters, optional JPEG crush again. The constants, the 800 px cap and the per-pass quality jitter come from the upstream project unchanged.
-- **A rebuilt interface.** The page is plain HTML, CSS and JavaScript with no jQuery, no analytics, no ads and no service worker; the layout is a dark workbench with the stage on the left and grouped controls on the right.
-- **Export you cannot trip.** Save, Copy and `Ctrl+S` refuse while a render is running or a point is being dragged, because the canvas is exportable only when it holds a finished render. A drag paints a preview, and the preview is never encoded.
-- **Everything local.** The host maps one folder to one virtual origin, denies CORS and cancels anything that would leave it; the page cannot open a connection and runs no analytics. Both the render and the encode happen in the window, with no service on the other end.
-- **Portable and installed.** A single executable with `app\` beside it, or a per-user installer that needs no elevation. Uninstalling removes the program and leaves the WebView2 profile folder in place, so a reinstall finds the state it had.
-- **The licence in the app.** The `Licence` button opens the attribution dialog; the full GPL version 3 text ships as `app/LICENSE`, along with `NOTICE.md`, `app/ATTRIBUTION.md` and `app/vendor/NOTICE`. The upstream licence file grants version 3 only, and this build makes no broader grant. The same licence requires any binary release to carry its corresponding source — the release tag's source archive — and `desktop/build.ps1` builds its binaries from that tree. CamanJS and glfx.js travel with their upstream source and a verifier under `third_party/`; a rebuild produces an equivalent build, not a byte-identical one — `glfx.js` itself was compiled with a Closure version that upstream never recorded.
+Nothing is written to the registry, no service or scheduled task is installed, and the process runs
+as the invoking user.
 
 ## Configure it
 
@@ -70,31 +66,27 @@ $env:MEME_FRYER_USER_DATA_DIR = '.\profile'
 .\Bytefry.exe
 ```
 
-Nothing is written to the registry, no service or scheduled task is installed, and the process runs as the invoking user.
+Those three variables keep their pre-rename spelling because a shipped install already owns them;
+[`docs/naming.md`](docs/naming.md) has the full list of such names and why each one stays.
 
-## Build and test
+## Build, test and check
 
 ```powershell
-node third_party/camanjs/verify.mjs        # shipped CamanJS bytes are the pinned upstream artifact
-node third_party/glfx/verify.mjs           # the same for glfx.js, plus the source they came from
-python desktop/MemeFryer.Desktop/Assets/make-icon.py --check   # the .ico is a fresh build of assets/icon.svg
 pwsh -File desktop/test.ps1                 # window-free suite: bridge, injected script, packaging, CLI
-pwsh -File desktop/build.ps1 -Verify        # the same build plus the off-screen self-check
-pwsh -File desktop/run-dev.ps1              # Debug host against the source app/
 node tests/run.mjs                          # web-layer suite in headless Chrome, no window
 node tests/run.mjs export-lock              # one test by name: drop-safety, load-parity, export-lock
-node tests/bench.mjs                        # optional: reports where a load spends its time; never a gate
-.\Bytefry.exe --help                        # usage, exit 0
-.\Bytefry.exe --selfcheck .\report.json     # exit 0 only when the report exists, parses and passed
+node third_party/camanjs/verify.mjs         # shipped CamanJS bytes are the pinned upstream artifact
+node third_party/glfx/verify.mjs            # the same for glfx.js, plus the source they came from
+python desktop/MemeFryer.Desktop/Assets/make-icon.py --check   # the .ico is a fresh build of assets/icon.svg
+pwsh -File desktop/build.ps1 -Verify        # the same build plus the off-screen self-check
 ```
 
-The icon is one vector source, `assets/icon.svg`, shown at the top of this page and rasterised into `desktop/MemeFryer.Desktop/Assets/MemeFryer.ico` by `make-icon.py` at 16, 24, 32, 48, 64, 128 and 256 px. Windows takes that one file three ways: the executable's Win32 icon resource, the window icon and the installer. `--check` compares the committed `.ico` with a fresh build and exits non-zero on any difference, and `--preview <dir>` writes every frame plus a light/dark contact sheet for a human to judge. It needs Python with Pillow and numpy; the rest of the build does not.
-
-`node tests/run.mjs` is the gate: correctness checks with no wall-clock assertions, so a busy machine cannot turn it red. `node tests/bench.mjs` is the measurement, opt-in and numbers only; it exits non-zero only if two scripts produce different bytes, and a timing difference is never a failure. The two `third_party/*/verify.mjs` scripts are offline too: they match the shipped `app/vendor/` files against the pinned upstream artifacts and check that the source kept beside them is the source those artifacts came from.
-
-`-Verify` needs a real window for WebView2 to compose, so it parks one outside every monitor with `WS_EX_NOACTIVATE`: nothing is visible and no focus is taken, but it is off-screen, not headless. It is opt-in and `desktop/test.ps1` never runs it.
-
-`pwsh -File desktop/build.ps1 -Runtime win-arm64` publishes ARM64, the installer architecture follows the payload, and the build fails when the executable's PE machine disagrees with the requested runtime.
+`node tests/run.mjs` is the gate: correctness checks with no wall-clock assertions, so a busy
+machine cannot turn it red. `node tests/bench.mjs` is the optional measurement — numbers only, and
+it fails solely on a byte difference, never on a timing one. `-Verify` needs a real window for
+WebView2 to compose, so it parks one outside every monitor with `WS_EX_NOACTIVATE`: nothing is
+visible and no focus is taken, but it is off-screen, not headless, which is why it stays opt-in. The
+icon check needs Python with Pillow and numpy; nothing else here does.
 
 ## Requirements
 
@@ -111,22 +103,26 @@ The icon is one vector source, `assets/icon.svg`, shown at the top of this page 
 - The automated suite is window-free. How the rendered pixels look, and how the native Open and Save dialogs draw, need a human look.
 - The executable without `app\` shows an error dialog and exits 2.
 
+## Where the details live
+
+| Document | What it covers |
+|---|---|
+| [`app/README.md`](app/README.md) | the web layer: the pipeline order, the keys, the offline rules, the bridge calls it makes |
+| [`desktop/README.md`](desktop/README.md) | the host: bridge contract v1, host policy, build and packaging, what the save can and cannot promise |
+| [`docs/naming.md`](docs/naming.md) | Bytefry against the pre-rename names, and which of those stay and why |
+| [`docs/release-0.1.1.md`](docs/release-0.1.1.md), [`docs/release-0.1.0.md`](docs/release-0.1.0.md) | each published release: assets, SHA-256 values, corresponding source, checks |
+| [`CHANGELOG.md`](CHANGELOG.md) | what changed in each version |
+| [`third_party/`](third_party) | the vendored CamanJS and glfx.js source, and how each shipped artifact was produced |
+
 ## Status
 
-Experimental and still moving. It works today, but it is not a finished
-product: interfaces may change, features may be improved or removed, and a
-release can break the one before it. This is maintained by one person, not a
-team. If it breaks, open an issue with the command you ran and what you saw.
+Experimental and still moving. It works today, but it is not a finished product: interfaces may
+change, features may be improved or removed, and a release can break the one before it. This is
+maintained by one person, not a team. If it breaks,
+[open an issue](https://github.com/nathwn12/bytefry/issues) with the command you ran and what you saw.
 
 ## Links
 
+- [Releases](https://github.com/nathwn12/bytefry/releases) · [Issues](https://github.com/nathwn12/bytefry/issues) · [Changelog](CHANGELOG.md)
 - Upstream: [Meme Deep Fryer](https://deepfriedmemes.com) by [Dima](https://dmitry.lol) and contributors, [source on GitHub](https://github.com/efskap/deepfriedmemes.com)
-- [GPL-3.0-only](LICENSE)
-
-<!-- nathwn12 house footer: identical in every repo. Do not edit. -->
-<p align="center">
-  <a href="https://github.com/nathwn12"><img src="assets/signature.svg" width="96" alt="nathwn12" /></a>
-</p>
-<p align="center">
-  <sub>Built by <a href="https://github.com/nathwn12">nathwn12</a> · <a href="https://github.com/nathwn12?tab=repositories">All projects</a></sub>
-</p>
+- Licence: [GPL-3.0-only](LICENSE). The upstream licence file grants version 3 and no later version, so this build claims none. Every release carries its corresponding source: the tagged tree's source archive is on the same release page.

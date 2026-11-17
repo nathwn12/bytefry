@@ -1,9 +1,11 @@
-# Bytefry 0.1.0 — release draft
+# Bytefry 0.1.0 — release record
 
-**Release preparation notes.** This document records the planned contents and checks; consult the
-repository's release page for the actual publication status and assets.
-
-## Bytefry 0.1.0
+| | |
+|---|---|
+| Published | 2026-11-16, 18:12 UTC |
+| Tag | `v0.1.0` at commit `7c694dd6374686ace6b16c8107b62fcf64b0b8c7` |
+| Release page | <https://github.com/nathwn12/bytefry/releases/tag/v0.1.0> |
+| Superseded | yes, by [`0.1.1`](release-0.1.1.md); its own release page stays as published |
 
 Deep-fry an image in a Windows window: repeat-JPEG crush, a WebGL bulge and five filters, all running on
 your machine, then save. The first release is the desktop host and the rebuilt interface — no analytics,
@@ -33,19 +35,27 @@ Requirements: Windows 10 or later, x64 or ARM64, and the Microsoft Edge WebView2
 Windows 11). The default build is self-contained: the .NET 10 runtime travels inside the single
 executable, so the machine needs no separate .NET install.
 
-## Assets to attach
+## Released assets
 
-Build these from the tagged commit; do not attach a local build from an earlier tree. The setup file is
-the name the build produces today; the zip name is a packaging choice for the release. Internal names that
-keep the pre-rename spelling are listed in [`naming.md`](naming.md).
+Built from the tagged commit; these are the names, bytes and digests the release page carries.
+
+| Asset | Bytes | SHA-256 |
+|---|---|---|
+| `Bytefry-0.1.0-setup.exe` | 45021363 | `1720706e2d88efb25d0c559c69fae1a245d190512deaec3775d7dd78f409439f` |
+| `Bytefry-0.1.0-portable-x64-release.zip` | 44476540 | `fb8edd3151e4f5bf7927915de664df411efad9d85108f5f206a7a5333e636182` |
+| `Bytefry-0.1.0-source.zip` | 1327791 | `099f25dd6f322eac251531d037f6ba963c3650e097480c82a8deb119aaec1c2a` |
+
+How each one is produced:
 
 | Asset | Produced by | Notes |
 |---|---|---|
 | `Bytefry-0.1.0-setup.exe` | `pwsh -File desktop/build.ps1 -Installer` | per-user installer, architecture follows the payload |
-| `Bytefry-0.1.0-portable.zip` | `pwsh -File desktop/build.ps1`, then zip `desktop\dist\portable\` | the archive must keep `app\` beside `Bytefry.exe` |
+| `Bytefry-0.1.0-portable-x64-release.zip` | `pwsh -File desktop/build.ps1`, then archive the contents of `desktop\dist\portable\` | the archive keeps `app\` beside `Bytefry.exe` |
+| `Bytefry-0.1.0-source.zip` | `git archive --format=zip --prefix=Bytefry-0.1.0/ v0.1.0` | the curated source archive; see below |
 
-Record the SHA-256 of each attached file at upload time and paste the real values here; do not guess
-them. Tag convention: `v0.1.0`.
+The setup file is the name the build produces; the zip name is a packaging choice made at release time
+and does not follow the build's version-stamped naming. Internal names that keep the pre-rename
+spelling are listed in [`naming.md`](naming.md).
 
 ## Corresponding source and build materials
 
@@ -56,8 +66,8 @@ is the source, the same release page serves the tag's source archive, and no bin
 
 | What | How it is delivered | Notes |
 |---|---|---|
-| Corresponding Source for `v0.1.0` | The source archive GitHub generates for that tag, offered on the same release page (`Source code (zip)` and `Source code (tar.gz)`) | Generated from the tagged commit, not from a branch. The URL does not exist until the release is published; do not write one here before then |
-| Optional curated archive | `Bytefry-0.1.0-source.zip`, built from the same commit with `git archive --format=zip --prefix=Bytefry-0.1.0/ v0.1.0` | The same tree as the tag archive, with nothing added or left out beyond the `--prefix` directory. If both are offered they must come from the identical commit |
+| Corresponding Source for `v0.1.0` | The source archive GitHub generates for that tag, offered on the same release page (`Source code (zip)` and `Source code (tar.gz)`) | Generated from the tagged commit, not from a branch; both are on the release page |
+| Curated archive | `Bytefry-0.1.0-source.zip` on the same release page — 1327791 bytes, SHA-256 in *Released assets* above | Built from the same commit with `git archive --format=zip --prefix=Bytefry-0.1.0/ v0.1.0`. The same tree as the tag archive, with nothing added or left out beyond the `--prefix` directory |
 | Rebuild route | `pwsh -File desktop/build.ps1 -Installer` from the root of the extracted archive | Needs the .NET SDK 10 and Inno Setup 6; produces an equivalent setup and portable folder, not a byte-identical reproduction — see below |
 
 The archive carries everything needed to rebuild the binaries:
@@ -79,12 +89,13 @@ consume them are in the archive, which is what the licence asks for.
 The notices each binary must carry, and does carry: `NOTICE.md` at the root of the portable folder and in
 the install directory, `app/LICENSE`, `app/ATTRIBUTION.md` and `app/vendor/NOTICE`, plus the in-app
 `Licence` dialog. The installer copies the portable folder whole, so nothing is dropped on the way in.
-Record at publish time, in this file: the commit SHA, the tag, the attached source archive name and its
-SHA-256, and this notice list — as they actually are, not as planned.
+The commit SHA, the tag, the attached source archive name and its SHA-256 are recorded in the tables
+above.
 
-## Checks to record before publishing
+## Checks
 
-Not yet recorded for this release. Run, in this order, and record the real output:
+No output from this gate was recorded for 0.1.0, and this file does not claim it passed. The commands
+are the gate and are unchanged, so they can be re-run against the tag. In order:
 
 1. `node third_party/camanjs/verify.mjs` and `node third_party/glfx/verify.mjs` — offline and
    dependency-free: they prove the shipped `app/vendor/` bytes are the pinned upstream artifacts and that
@@ -120,13 +131,12 @@ release is distributed under the same terms as GPL-3.0-only; the full text ships
 `LICENSE`, and the changes are itemised in `ATTRIBUTION.md`.
 Bundled unchanged: CamanJS (BSD-3-Clause, 2010 Ryan LeFevre) and glfx.js (MIT, 2011 Evan Wallace).
 
-## Publication checklist
+## Publication record
 
-- [ ] Owner approves the release text and the assets.
-- [ ] Repository created: the working copy is not a git repository yet, so there is no tag, no Issues link
-      and nowhere to attach an asset.
-- [ ] Checks above run and recorded.
-- [ ] Tag `v0.1.0` pushed, and the binaries attached together with that tag's source archive (or a curated
-      source zip from the same commit) and real SHA-256 values.
-- [ ] Release notes name the tag as the Corresponding Source and list the notices each binary carries:
-      `NOTICE.md`, `app/LICENSE`, `app/ATTRIBUTION.md`, `app/vendor/NOTICE`, and the in-app dialog.
+- [x] Owner approved the release text and the assets: the release page is published.
+- [x] Repository `nathwn12/bytefry` created (private), so the tag, the issue tracker and an asset host exist.
+- [ ] Checks above run and recorded: no output was written down for this version — see *Checks*.
+- [x] Tag `v0.1.0` pushed, and the binaries attached together with that tag's source archives and the
+      curated source zip; the SHA-256 values are in *Released assets*.
+- [x] Release notes name the tag as the Corresponding Source and state that the upstream credits and
+      third-party notices are included.
