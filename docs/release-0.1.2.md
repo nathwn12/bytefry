@@ -6,6 +6,7 @@
 | Release | <https://github.com/nathwn12/bytefry/releases/tag/bytefry> - named "Bytefry 0.1.2" and carrying this version's three downloads; the release tag itself still names commit `2ab8d0b` |
 | Source tag | `v0.1.2` at commit `5d78f3a0a21a1bffd25096dca9b3586f768ba932`, immutable; the unversioned `bytefry` tag stays at `2ab8d0b` and did not move with this release |
 | Supersedes | 0.1.1, whose three assets this release replaced; those files are no longer downloadable, and [`release-0.1.1.md`](release-0.1.1.md) keeps their digests as the record of what was attached |
+| Superseded | by [`0.1.3`](release-0.1.3.md), which is prepared and not yet published; until it is, this version's assets are the stable release's |
 
 Two defects in the image controls and one wrong sentence in the README, all found by a cold review. The
 host, the installer, the pipeline's order and constants, the bridge contract, the portable layout and
