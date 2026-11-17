@@ -75,5 +75,6 @@ assets and prints their SHA-256 values.
 - [`app/README.md`](app/README.md) — the web layer: pipeline order, keys, offline rules
 - [`desktop/README.md`](desktop/README.md) — the host: bridge contract, policy, packaging, the save's limits
 - [`CHANGELOG.md`](CHANGELOG.md) — what changed in each version
-- Upstream: [Meme Deep Fryer](https://deepfriedmemes.com) by [Dima](https://dmitry.lol) and contributors, [source on GitHub](https://github.com/efskap/deepfriedmemes.com)
+- Upstream: [Meme Deep Fryer](https://deepfriedmemes.com) by Dima and contributors
+- Upstream source: [GitHub](https://github.com/efskap/deepfriedmemes.com)
 - Licence: [GPL-3.0-only](LICENSE)
