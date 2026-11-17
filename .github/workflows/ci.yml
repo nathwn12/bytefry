@@ -38,6 +38,10 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Full history: the scope step below diffs against the base branch with
+          # `...`, which needs a merge base (and, on a push, the `before` commit).
+          fetch-depth: 0
 
       - name: Detect a docs-only change
         id: scope
