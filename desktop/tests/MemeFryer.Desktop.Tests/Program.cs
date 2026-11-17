@@ -785,7 +785,7 @@ internal static class Program
         var desktopDir = RepoPath("desktop");
         var csprojPath = Path.Combine(desktopDir, "MemeFryer.Desktop", "MemeFryer.Desktop.csproj");
         var issPath = Path.Combine(desktopDir, "installer", "MemeFryer.iss");
-        var buildPath = Path.Combine(desktopDir, "build.ps1");
+        var buildPath = Path.Combine(desktopDir, "build.mjs");
 
         runner.Check("the WebView2 package version is pinned exactly", () =>
         {
@@ -805,47 +805,92 @@ internal static class Program
                 "ArchitecturesInstallIn64BitMode is not driven by MyArch");
 
             var build = File.ReadAllText(buildPath);
-            Runner.Require(build.Contains("'win-arm64' { 'arm64' }", StringComparison.Ordinal),
-                "build.ps1 has no arm64 mapping");
-            Runner.Require(build.Contains("'win-x64' { 'x64compatible' }", StringComparison.Ordinal),
-                "build.ps1 has no x64 mapping");
-            Runner.Require(build.Contains("/DMyArch=$innoArchitecture", StringComparison.Ordinal),
-                "build.ps1 does not pass MyArch to ISCC");
+            Runner.Require(build.Contains("'win-arm64': 'arm64'", StringComparison.Ordinal),
+                "build.mjs has no arm64 mapping");
+            Runner.Require(build.Contains("'win-x64': 'x64compatible'", StringComparison.Ordinal),
+                "build.mjs has no x64 mapping");
+            Runner.Require(build.Contains("/DMyArch=${innoArchitecture}", StringComparison.Ordinal),
+                "build.mjs does not pass MyArch to ISCC");
         });
 
         runner.Check("the published exe architecture is checked against the runtime", () =>
         {
             var build = File.ReadAllText(buildPath);
             Runner.Require(build.Contains("0x8664", StringComparison.Ordinal), "no x64 PE machine check");
-            Runner.Require(build.Contains("0xAA64", StringComparison.Ordinal), "no arm64 PE machine check");
+            Runner.Require(build.Contains("0xaa64", StringComparison.Ordinal), "no arm64 PE machine check");
         });
 
-        runner.Check("-Verify trusts only a report that parses and passes", () =>
+        runner.Check("--verify trusts only a report that parses and passes", () =>
         {
             var build = File.ReadAllText(buildPath);
-            Runner.Require(build.Contains("selfcheck-report.ps1", StringComparison.Ordinal),
-                "build.ps1 does not use the shared report gate");
-            Runner.Require(build.Contains("Read-SelfCheckReport", StringComparison.Ordinal),
-                "build.ps1 does not call Read-SelfCheckReport");
+            Runner.Require(build.Contains("selfcheck-report.mjs", StringComparison.Ordinal),
+                "build.mjs does not use the shared report gate");
+            Runner.Require(build.Contains("readSelfCheckReport", StringComparison.Ordinal),
+                "build.mjs does not call readSelfCheckReport");
 
-            // The gate's behaviour is exercised by desktop/test.ps1; these are its required rules.
-            var gate = File.ReadAllText(Path.Combine(desktopDir, "selfcheck-report.ps1"));
+            // The gate's behaviour is exercised by desktop/test.mjs; these are its required rules.
+            var gate = File.ReadAllText(Path.Combine(desktopDir, "selfcheck-report.mjs"));
             Runner.Require(gate.Contains("produced no report", StringComparison.Ordinal), "a missing report is not rejected");
             Runner.Require(gate.Contains("not valid JSON", StringComparison.Ordinal), "an unparsable report is not rejected");
-            Runner.Require(gate.Contains("passed -ne $true", StringComparison.Ordinal), "a report that is not passing is not rejected");
+            Runner.Require(gate.Contains("does not say passed=true", StringComparison.Ordinal), "a report that is not passing is not rejected");
             Runner.Require(gate.Contains("failing check", StringComparison.Ordinal), "individual failing checks are not rejected");
             Runner.Require(gate.Contains("refusing to trust", StringComparison.Ordinal), "exit code and report are not cross-checked");
         });
 
-        runner.Check("the build never writes into the app lane's folder", () =>
+        runner.Check("the release build names three assets from a clean commit and proves each", () =>
         {
             var build = File.ReadAllText(buildPath);
-            foreach (var pattern in new[] { @"(Set-Content|Add-Content|Out-File|Remove-Item|New-Item)[^\r\n]*\$appSrc",
-                                            @"Copy-Item[^\r\n]*\$appSrc[^\r\n]*-Destination\s+\$appSrc" })
+            Runner.Require(build.Contains("'--release'", StringComparison.Ordinal),
+                "build.mjs has no --release option");
+            Runner.Require(
+                build.Contains("options.runtime === 'win-x64' ? 'x64' : 'arm64'", StringComparison.Ordinal) &&
+                build.Contains("-portable-${portableTag}.zip", StringComparison.Ordinal),
+                "no portable zip asset name, or no x64/arm64 tag for it");
+            Runner.Require(build.Contains("-source.zip", StringComparison.Ordinal),
+                "no source zip asset name");
+            Runner.Require(build.Contains("status', '--porcelain'", StringComparison.Ordinal),
+                "a dirty worktree is not refused");
+            Runner.Require(build.Contains("'--format=zip'", StringComparison.Ordinal) &&
+                build.Contains("--prefix=${prefix}", StringComparison.Ordinal),
+                "the source zip is not a git archive under one root");
+            Runner.Require(build.Contains("assertZipRoots(", StringComparison.Ordinal) &&
+                build.Contains("zipEntries(", StringComparison.Ordinal),
+                "the archives' roots are never read back");
+            Runner.Require(build.Contains("sha256(", StringComparison.Ordinal),
+                "the assets are not hashed for the report");
+        });
+
+        runner.Check("the build never writes into the app lane's folder", () =>
+        {
+            // app/ is owned by another lane, so every mention of appSrc in the build has to be a
+            // read. The list is closed on purpose: a new mention fails here until someone justifies
+            // it, which fails safe where a pattern that stopped matching would not.
+            var allowed = new[]
             {
-                Runner.Require(!System.Text.RegularExpressions.Regex.IsMatch(build, pattern),
-                    $"build.ps1 writes into app/: {pattern}");
+                "const appSrc = join(repoRoot, 'app');",
+                "const appEntry = join(appSrc, 'index.html');",
+                "cpSync(appSrc, appDest, { recursive: true });",
+            };
+
+            var lines = File.ReadAllLines(buildPath);
+            var mentions = lines.Count(line => line.Contains("appSrc", StringComparison.Ordinal));
+            Runner.Require(mentions >= allowed.Length,
+                "build.mjs barely mentions appSrc, so this check proves nothing");
+
+            foreach (var line in lines.Where(line => line.Contains("appSrc", StringComparison.Ordinal)))
+            {
+                var trimmed = line.Trim();
+                Runner.Require(allowed.Contains(trimmed),
+                    $"build.mjs uses appSrc where a read is not proven: {trimmed}");
             }
+
+            // The copy mirrors app/: a file that left the source tree must not survive in the bundle,
+            // so the destination is emptied before it is filled.
+            var cleared = Array.FindIndex(lines, line => line.Contains("rmSync(appDest", StringComparison.Ordinal));
+            var copied = Array.FindIndex(lines, line => line.Contains("cpSync(appSrc, appDest", StringComparison.Ordinal));
+            Runner.Require(cleared >= 0, "build.mjs does not clear the bundled app folder before copying");
+            Runner.Require(copied > cleared,
+                "build.mjs copies app/ before clearing the destination, so a stale file survives");
         });
 
         // ------------------------------------------------ Bytefry product identity
@@ -878,9 +923,11 @@ internal static class Program
 
             var build = File.ReadAllText(buildPath);
             Runner.Require(build.Contains("'Bytefry.exe'", StringComparison.Ordinal),
-                "build.ps1 does not look for Bytefry.exe");
-            Runner.Require(build.Contains("'Bytefry-*-setup.exe'", StringComparison.Ordinal),
-                "build.ps1 looks for the wrong setup file");
+                "build.mjs does not look for Bytefry.exe");
+            Runner.Require(build.Contains("name.startsWith('Bytefry-')", StringComparison.Ordinal),
+                "build.mjs looks for the wrong setup file");
+            Runner.Require(build.Contains("name.endsWith('-setup.exe')", StringComparison.Ordinal),
+                "build.mjs looks for the wrong setup file");
         });
 
         runner.Check("no shipped source, script or packaging file shows the pre-rename display name", () =>
@@ -897,7 +944,7 @@ internal static class Program
                     .Any(part => part is "bin" or "obj" or "dist" or "tests"))
                     continue;
 
-                if (Path.GetExtension(file) is not (".cs" or ".csproj" or ".ps1" or ".iss" or ".manifest"))
+                if (Path.GetExtension(file) is not (".cs" or ".csproj" or ".mjs" or ".iss" or ".manifest"))
                     continue;
 
                 scanned++;
@@ -917,7 +964,7 @@ internal static class Program
                 ("MemeFryer.Desktop.csproj", File.ReadAllText(csprojPath)),
                 ("NOTICE.md", File.ReadAllText(Path.Combine(desktopDir, "NOTICE.md"))),
                 ("README.md", File.ReadAllText(Path.Combine(desktopDir, "README.md"))),
-                ("build.ps1", File.ReadAllText(buildPath)),
+                ("build.mjs", File.ReadAllText(buildPath)),
             };
 
             foreach (var (name, text) in files)
@@ -987,8 +1034,8 @@ internal static class Program
         runner.Check("the bundle carries the host's licence notice and names its dependencies", () =>
         {
             var build = File.ReadAllText(buildPath);
-            Runner.Require(build.Contains("Copy-Item -LiteralPath $noticeFile -Destination (Join-Path $stage 'NOTICE.md')", StringComparison.Ordinal),
-                "build.ps1 does not copy NOTICE.md into the portable folder");
+            Runner.Require(build.Contains("copyFileSync(noticeFile, join(stage, 'NOTICE.md'))", StringComparison.Ordinal),
+                "build.mjs does not copy NOTICE.md into the portable folder");
 
             var notice = File.ReadAllText(Path.Combine(desktopDir, "NOTICE.md"));
             foreach (var dependency in new[] { "Microsoft.Web.WebView2", "WebView2 Runtime", ".NET 10", "caman", "glfx" })
@@ -1453,11 +1500,11 @@ internal static class Program
             Runner.Require(iss.Contains(@"UninstallDisplayIcon={app}\{#MyAppExeName}", StringComparison.Ordinal),
                 "the uninstall entry has no icon");
 
-            var build = File.ReadAllText(Path.Combine(desktopDir, "build.ps1"));
-            Runner.Require(build.Contains(@"'Assets\MemeFryer.ico'", StringComparison.Ordinal),
-                "build.ps1 does not name the icon asset");
-            Runner.Require(build.Contains(@"/DIconFile=$iconFile", StringComparison.Ordinal),
-                "build.ps1 does not pass IconFile to ISCC");
+            var build = File.ReadAllText(Path.Combine(desktopDir, "build.mjs"));
+            Runner.Require(build.Contains(@"join(projectDir, 'Assets', 'MemeFryer.ico')", StringComparison.Ordinal),
+                "build.mjs does not name the icon asset");
+            Runner.Require(build.Contains(@"/DIconFile=${iconFile}", StringComparison.Ordinal),
+                "build.mjs does not pass IconFile to ISCC");
         });
 
         runner.Check("no frame paints a background: every corner and side is fully transparent", () =>

@@ -1,5 +1,5 @@
 ; Bytefry — Inno Setup 6 script (per-user install, no elevation).
-; Compile with desktop/build.ps1 -Installer, or directly:
+; Compile with desktop/build.mjs --installer, or directly:
 ;   ISCC.exe /DMyAppVersion=0.1.3 /DSourceDir=..\dist\portable /DOutDir=..\dist\installer MemeFryer.iss
 ;
 ; The script file keeps its pre-rename name; the product it builds, installs and uninstalls is Bytefry.
@@ -11,7 +11,7 @@
 #ifndef MyAppVersion
   #define MyAppVersion "0.0.0"
 #endif
-; Must match the published payload (build.ps1 passes x64compatible or arm64).
+; Must match the published payload (build.mjs passes x64compatible or arm64).
 #ifndef MyArch
   #define MyArch "x64compatible"
 #endif
@@ -22,7 +22,7 @@
   #define OutDir "..\dist\installer"
 #endif
 ; Setup.exe, the Apps & Features entry and the shortcuts take this icon (16-256 px).
-; build.ps1 passes an absolute /DIconFile.
+; build.mjs passes an absolute /DIconFile.
 #ifndef IconFile
   #define IconFile "..\MemeFryer.Desktop\Assets\MemeFryer.ico"
 #endif

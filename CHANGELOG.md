@@ -9,7 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 The window's title bar is the native Windows one, painted to match the app. The host, the
 installer, the pipeline, the bridge contract, the portable layout and the licence are those of
-0.1.2.
+0.1.2. The build and test workflow is Node scripts rather than PowerShell, and one command now
+produces every release asset.
 
 ### Added
 
@@ -20,6 +21,24 @@ installer, the pipeline, the bridge contract, the portable layout and the licenc
   high contrast is left entirely to the system palette, and a Windows 10 build gets a dark caption
   with Windows' own title colour, which is all its DWM offers. The caption fill and its title colour
   are asked for as a pair: if either is refused, both go back to the system default.
+- `node desktop/build.mjs --release` produces all three release assets in one command: the per-user
+  installer, a portable zip whose entries sit at the archive root, and a source zip of the exact
+  HEAD commit from `git archive`. It refuses a dirty worktree, reads each archive's roots back,
+  round-trips the portable files, and prints a SHA-256 for every asset.
+
+### Changed
+
+- The build and test workflow is Node scripts: `desktop/build.mjs`, `desktop/test.mjs`,
+  `desktop/selfcheck-report.mjs` and `desktop/run-dev.mjs`. PowerShell is gone from the repository,
+  CI included, and every check the old scripts ran still runs.
+- The README is one product page. Release history is this file and the release page; the
+  per-release documents, the naming document and an unused signature asset are gone.
+
+### Removed
+
+- `desktop/build.ps1`, `desktop/test.ps1`, `desktop/selfcheck-report.ps1`, `desktop/run-dev.ps1`.
+- `docs/release-0.1.0.md`, `docs/release-0.1.1.md`, `docs/release-0.1.2.md`, `docs/release-0.1.3.md`,
+  `docs/naming.md`, `assets/signature.svg`.
 
 ## [0.1.2]
 
@@ -91,15 +110,14 @@ variables keep the pre-rename names (`MemeFryer`, `meme-fryer.local`,
 - No network surface: the page declares `connect-src 'none'`, and the host
   cancels navigation, new windows and permission requests outside its own virtual
   origin.
-- Packaging: a self-contained single-file build (`desktop/build.ps1`), a per-user
-  installer that needs no elevation (`-Installer`), `win-arm64` output, and a
-  check that fails when the executable's PE machine disagrees with the requested
-  runtime.
+- Packaging: a self-contained single-file build of the host, a per-user installer
+  that needs no elevation, `win-arm64` output, and a check that fails when the
+  executable's PE machine disagrees with the requested runtime.
 - An off-screen self-check: `--selfcheck <report.json>` runs the host outside
-  every monitor and writes a JSON report, which `desktop/selfcheck-report.ps1`
-  accepts only when it parses, reports `passed: true`, carries no failing check,
-  and agrees with a zero exit code.
-- Tests: a window-free C# suite plus that report gate (`desktop/test.ps1`), a
+  every monitor and writes a JSON report, which the shared report gate
+  (`desktop/selfcheck-report.mjs`) accepts only when it parses, reports
+  `passed: true`, carries no failing check, and agrees with a zero exit code.
+- Tests: a window-free C# suite plus that report gate (`desktop/test.mjs`), a
   deterministic headless web-layer suite (`node tests/run.mjs`), and an opt-in
   measurement of the load path (`node tests/bench.mjs`).
 - GPL-3.0-only, with the upstream attribution in `app/ATTRIBUTION.md` and the

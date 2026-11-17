@@ -35,37 +35,40 @@ desktop/
     Assets/icon.lock          sha256 of both files, compared by the suite with no Python
   tests/MemeFryer.Desktop.Tests/   window-free suite (bridge, script, packaging, CLI)
   installer/MemeFryer.iss     Inno Setup 6, per-user install, architecture from the build
-  build.ps1                   publish + bundle app/ + NOTICE.md [+ installer] [+ off-screen check]
-  test.ps1                    every window-free check, one command
-  selfcheck-report.ps1        the one authority for "did the self-check pass"
-  run-dev.ps1                 debug build against the source app/ (shows a window)
+  build.mjs                   publish + bundle app/ + NOTICE.md [+ installer] [+ off-screen check]
+  test.mjs                    every window-free check, one command
+  selfcheck-report.mjs        the one authority for "did the self-check pass"
+  run-dev.mjs                 debug build against the source app/ (shows a window)
   NOTICE.md                   licence of the combined work + the components in the exe
   dist/                       build output (gitignored)
 ```
 
 ## Commands
 
-```powershell
+```sh
 # every window-free check: C# suite + the self-check report gate
-pwsh -File desktop/test.ps1
+node desktop/test.mjs
 
-# portable build: dist\portable\Bytefry.exe + dist\portable\app\  (self-contained, single file)
-pwsh -File desktop/build.ps1
+# portable build: dist/portable/Bytefry.exe + dist/portable/app/  (self-contained, single file)
+node desktop/build.mjs
 
-# installer as well: dist\installer\Bytefry-0.1.3-setup.exe
-pwsh -File desktop/build.ps1 -Installer
+# installer as well: dist/installer/Bytefry-<version>-setup.exe
+node desktop/build.mjs --installer
+
+# every release asset in one command: dist/release/ - installer, portable zip, source zip
+node desktop/build.mjs --release
 
 # smaller exe that needs the .NET 10 Desktop Runtime installed
-pwsh -File desktop/build.ps1 -FrameworkDependent
+node desktop/build.mjs --framework-dependent
 
 # opt-in off-screen end-to-end run (creates a window outside every monitor; see below)
-pwsh -File desktop/build.ps1 -Verify
+node desktop/build.mjs --verify
 
 # debug host against the source tree (this one shows a window)
-pwsh -File desktop/run-dev.ps1
+node desktop/run-dev.mjs
 ```
 
-`-Runtime win-arm64` publishes and packages ARM64; the installer architecture follows the payload
+`--runtime win-arm64` publishes and packages ARM64; the installer architecture follows the payload
 (`x64compatible` or `arm64`), and the build fails if the PE machine of `Bytefry.exe` does not match
 the requested runtime.
 
@@ -78,11 +81,11 @@ Observed on this machine, Release:
 | framework-dependent, single file | 1.9 MB | 2.1 MB with `app/` |
 | Inno Setup installer (x64 payload) | — | 42.9 MB |
 
-`-AllowMissingApp` publishes the host shell while `app/index.html` does not exist yet.
+`--allow-missing-app` publishes the host shell while `app/index.html` does not exist yet.
 
 ## What is verified, and how
 
-`desktop/test.ps1` is window-free: no Form, no WebView2, no message box. It covers the bridge host
+`desktop/test.mjs` is window-free: no Form, no WebView2, no message box. It covers the bridge host
 (`hostInfo`, `saveImage` for data URLs, bare base64, `charset` parameters and wrapped base64, directory
 creation, undecodable payloads, unknown commands, malformed messages, id echo), app-folder resolution
 (override, beside-the-exe, six-level walk up, the failure message, user-data folder), the self-check
@@ -109,16 +112,16 @@ the report carries the value it read back wherever that query is answered), that
 colours, and that asking twice lands the same place. It needs a real window for WebView2 to compose,
 so it parks one at `-32000,-32000`, out of the taskbar and never activated
 (`WS_EX_NOACTIVATE`): nothing is visible and no focus is taken, but **it is off-screen, not headless** —
-a window object does exist. It is therefore opt-in via `-Verify` and never run by `test.ps1`.
+a window object does exist. It is therefore opt-in via `--verify` and never run by `test.mjs`.
 
 Three things no automated check here establishes: how the rendered pixels look, how the native
 Open/Save dialogs render (a dialog is a separate native window), and how the caption looks when it is
 hovered, focused, inactive, maximised, mirrored for a right-to-left system, or pushed through a remote
 session. The caption's *acceptance* is checked; its *appearance* is a human look at a screenshot.
 
-`-Verify` trusts nothing but a report that exists, parses, says `passed=true`, has at least one check,
-has no failing check, and agrees with a zero exit code (`selfcheck-report.ps1`). `test.ps1` feeds that
-gate seven fabricated reports to prove each rule still rejects.
+`--verify` trusts nothing but a report that exists, parses, says `passed=true`, has at least one
+check, has no failing check, and agrees with a zero exit code (`selfcheck-report.mjs`). `test.mjs`
+feeds that gate seven fabricated reports to prove each rule still rejects.
 
 ## Bridge contract, version 1
 
@@ -164,7 +167,7 @@ Notes both lanes depend on:
 - Virtual origin `https://meme-fryer.local/`, mapped with `DenyCors`, serving `app/` only.
 - Every navigation outside that origin, every new window and every permission request is refused.
   Links inside the app (the attribution dialog) therefore do nothing — deliberate for an offline build.
-- Devtools, context menus and browser accelerators are off unless `MEME_FRYER_DEV=1` (set by `run-dev.ps1`).
+- Devtools, context menus and browser accelerators are off unless `MEME_FRYER_DEV=1` (set by `run-dev.mjs`).
 - User data lives in `%LOCALAPPDATA%\MemeFryer\WebView2`, never beside the exe, so a read-only install
   folder is fine; `MEME_FRYER_USER_DATA_DIR` overrides it. The folder keeps its pre-rename name on
   purpose: an installed copy already has its profile there, so the rename needed no migration.

@@ -83,6 +83,27 @@ async function realDrag(page, [x, y], filePath) {
     await page.send('Input.dispatchDragEvent', { type: 'drop', x, y, data });
 }
 
+/**
+ * The canvas's size once the app has stopped moving it.
+ *
+ * The stage is laid out by the app's own rAF-throttled `layout()`, which reads the stage area back,
+ * so a change can take more than one pass to converge. Waiting only for "the width changed" can
+ * therefore measure an intermediate pass, and a render scheduled in between finishes at a
+ * different width than the one recorded — which is a race in the measurement, not in the app.
+ * Three unchanged polls (60 ms) is the settled value.
+ */
+async function settledDisplay(page) {
+    await page.waitFor(`(() => {
+        const width = document.getElementById('canvas').offsetWidth;
+        const state = window.__settle || { width: -1, same: 0 };
+        if (state.width === width) state.same += 1;
+        else { state.width = width; state.same = 0; }
+        window.__settle = state;
+        return state.same >= 3;
+    })()`, 15000);
+    return page.evaluateJson(DISPLAY);
+}
+
 /** Runs one action that starts a render and waits for that render to finish. */
 async function nextRender(page, action) {
     const before = await page.evaluate('window.__watch.cycles');
@@ -120,7 +141,7 @@ export async function run({ browser, base, fixtures }) {
     })()`);
 
     const atLoadSize = {
-        display: await page.evaluateJson(DISPLAY),
+        display: await settledDisplay(page),
         digest: await page.evaluate(PIXEL_DIGEST)
     };
 
@@ -151,7 +172,7 @@ export async function run({ browser, base, fixtures }) {
     await page.waitFor(
         `document.getElementById('canvas').offsetWidth !== ${beforeShrink.display[0]}`,
         15000);
-    const shrunk = await page.evaluateJson(DISPLAY);
+    const shrunk = await settledDisplay(page);
 
     await nextRender(page, `(() => {
         const radius = document.getElementById('global-radius');
@@ -161,7 +182,7 @@ export async function run({ browser, base, fixtures }) {
     })()`);
 
     const atHalfSize = {
-        display: await page.evaluateJson(DISPLAY),
+        display: await settledDisplay(page),
         digest: await page.evaluate(PIXEL_DIGEST)
     };
 
@@ -170,6 +191,7 @@ export async function run({ browser, base, fixtures }) {
         ok: atHalfSize.display.display[0] !== atLoadSize.display.display[0] &&
             atHalfSize.display.display[0] === shrunk.display[0],
         detail: `load ${JSON.stringify(atLoadSize.display.display)}, ` +
+            `shrunk ${JSON.stringify(shrunk.display.display)}, ` +
             `half ${JSON.stringify(atHalfSize.display.display)}`
     });
     checks.push({
