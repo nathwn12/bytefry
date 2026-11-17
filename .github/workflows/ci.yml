@@ -14,12 +14,13 @@
 # exists, so the publish runs before that suite, which tests the shipped
 # single-file binary rather than a framework-dependent apphost.
 #
-# COST RULE - GitHub Actions is FREE on public repos and METERED on private ones
-# (windows-latest bills at 2x per minute). Manual while the repository is private;
-# restore the push and pull_request triggers once it is public.
+# Public CI runs on pushes and pull requests; manual runs remain available.
 name: ci
 
 on:
+  push:
+    branches: [main]
+  pull_request:
   workflow_dispatch:
 
 permissions:
