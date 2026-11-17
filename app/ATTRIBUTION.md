@@ -96,15 +96,19 @@ Additions (no original behaviour removed):
     being dragged or nudged, and a preview that arrives mid-render is painted
     only after the render has finished. Output of a completed render is
     unchanged.
+16. **The bulge radius is measured in canvas pixels.** The original's radius was
+    `global-radius × (canvas offsetWidth + offsetHeight) / 2`, a measure of the
+    canvas's on-screen size, while glfx pinches the canvas as a texture and
+    points are placed in canvas pixels. The two coordinate systems disagreed:
+    the same image, point and slider value rendered a different picture when the
+    stage displayed the canvas at a different size, because the radius grew and
+    shrank with the display instead of with the bitmap. It is now
+    `global-radius × (canvas.width + canvas.height) / 2`, the same formula in
+    the units the effect and the points use, so a render depends only on the
+    image and the controls.
 
 ## Kept deliberately
 
-- **Bulge radius uses displayed dimensions.** The radius is
-  `global-radius × (canvas offsetWidth + offsetHeight) / 2`, exactly the
-  original's formula. It is not a pixel measure on the bitmap: it scales with
-  the on-screen size, so the same slider value bulges the same fraction of the
-  picture at any zoom. Converting it to intrinsic canvas pixels would change
-  the result of every existing bulge, so it stays as it is.
 - **`nub.x − 4` / `nub.y − 4`** is the original pinch-centre expression and is
   kept; points are placed exactly under the cursor (change 6), which is the
   only part that was corrected.

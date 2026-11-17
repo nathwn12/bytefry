@@ -73,19 +73,107 @@ export const PROBE = `(() => {
   let failNextEncode = false;
   const realToDataURL = HTMLCanvasElement.prototype.toDataURL;
   HTMLCanvasElement.prototype.toDataURL = function (type, quality) {
+    let row = null;
     if (this === canvasEl) {
-      encodes.push([type || 'image/png', quality === undefined ? null : quality]);
+      /* The row is pushed before the failure, as it always was: a test that
+       * arms the encoder and sees it throw still records the attempt. The byte
+       * length is filled in once the encode returns, so a test can tell a
+       * recorded quality from one the encoder actually honoured. */
+      row = [type || 'image/png', quality === undefined ? null : quality, 0];
+      encodes.push(row);
       if (failNextEncode) {
         failNextEncode = false;
         throw new Error('the encoder failed');
       }
     }
-    return realToDataURL.apply(this, arguments);
+    const url = realToDataURL.apply(this, arguments);
+    if (row) row[2] = url.length;
+    return url;
   };
   t.armEncodes = function () { encodes.length = 0; return true; };
   t.encodeCount = function () { return encodes.length; };
   t.encodeList = function () { return JSON.stringify(encodes); };
   t.failNextEncode = function () { failNextEncode = true; return true; };
+
+  /* The bytes the save actually hands over, captured rather than assumed.
+   *
+   * The browser fallback builds a Blob from the encoded canvas and clicks a
+   * download link; the host branch passes its data URL to
+   * fryerHost.saveImage. Neither is exercised by looking at the encoder
+   * arguments: a save can ask for one quality and write another. armSave
+   * collects the Blob, savedPayload reads it back, and the anchor click is
+   * suppressed only while a save is armed, so no download runs and nothing
+   * outside a save changes. */
+  let saveArmed = false;
+  let savedBlob = null;
+  const realCreateObjectURL = URL.createObjectURL;
+  URL.createObjectURL = function (blob) {
+    if (saveArmed && blob && blob.type === 'image/jpeg') savedBlob = blob;
+    return realCreateObjectURL.apply(URL, arguments);
+  };
+  const realAnchorClick = HTMLAnchorElement.prototype.click;
+  HTMLAnchorElement.prototype.click = function () {
+    if (saveArmed) return undefined;
+    return realAnchorClick.apply(this, arguments);
+  };
+
+  function hashText(text) {
+    let hash = 0x811c9dc5;
+    for (let i = 0; i < text.length; i++) {
+      hash ^= text.charCodeAt(i);
+      hash = Math.imul(hash, 0x01000193) >>> 0;
+    }
+    return hash.toString(16);
+  }
+
+  function base64Of(dataUrl) {
+    const text = String(dataUrl || '');
+    const comma = text.indexOf(',');
+    return comma >= 0 ? text.slice(comma + 1) : '';
+  }
+
+  /* The same canvas, encoded at a chosen quality: the reference a saved
+   * payload is compared against, taken from one canvas at one instant. */
+  t.canvasEncode = function (quality) {
+    const url = realToDataURL.call(canvasEl, 'image/jpeg', quality);
+    const base64 = base64Of(url);
+    return JSON.stringify({ bytes: base64.length, hash: hashText(base64) });
+  };
+
+  t.fingerprint = function (dataUrl) {
+    const text = String(dataUrl || '');
+    const base64 = base64Of(text);
+    return JSON.stringify({ prefix: text.slice(0, 32), bytes: base64.length, hash: hashText(base64) });
+  };
+
+  t.armSave = function () {
+    saveArmed = true;
+    savedBlob = null;
+    encodes.length = 0;
+    return true;
+  };
+
+  t.savedPayload = function () {
+    if (!savedBlob) return Promise.resolve(JSON.stringify({ ok: false }));
+    const blob = savedBlob;
+    return new Promise(resolve => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const data = String(reader.result);
+        const base64 = base64Of(data);
+        resolve(JSON.stringify({
+          ok: true,
+          type: blob.type,
+          blobBytes: blob.size,
+          bytes: base64.length,
+          prefix: data.slice(0, 32),
+          hash: hashText(base64)
+        }));
+      };
+      reader.onerror = () => resolve(JSON.stringify({ ok: false, error: 'the saved blob could not be read' }));
+      reader.readAsDataURL(blob);
+    });
+  };
 
   /* CamanJS construction is the other way an adoption can fail after the canvas
    * has already been resized and drawn. The wrapper keeps its properties. */
