@@ -17,6 +17,10 @@ internal sealed class MainForm : Form
     private readonly TaskCompletionSource<bool> _firstNavigation =
         new(TaskCreationOptions.RunContinuationsAsynchronously);
     private Bridge? _bridge;
+    private ChromeResult? _chrome;
+
+    /// <summary><c>WM_SETTINGCHANGE</c>: the system theme, accent or contrast changed.</summary>
+    private const int WmSettingChange = 0x001A;
 
     /// <summary>
     /// Fail-closed: a self-check that never reaches a verdict exits non-zero. Only a run that writes a
@@ -56,6 +60,39 @@ internal sealed class MainForm : Form
 
     /// <summary>Off-screen self-check runs must not take focus from whatever the user is doing.</summary>
     protected override bool ShowWithoutActivation => _selfCheckReportPath is not null;
+
+    /// <summary>How the caption was asked for; the off-screen self-check reads it as evidence.</summary>
+    internal ChromeResult? Chrome => _chrome;
+
+    protected override void OnHandleCreated(EventArgs e)
+    {
+        base.OnHandleCreated(e);
+
+        // A window is born with the system caption, and a recreated handle is born with it again
+        // (Windows reparents the form on some DPI, theme and session changes). Styling here rather
+        // than once in the constructor is what makes the caption survive that.
+        ApplyWindowChrome("window created");
+    }
+
+    protected override void WndProc(ref Message m)
+    {
+        base.WndProc(ref m);
+
+        // WM_SETTINGCHANGE: the user switched light/dark, turned high contrast on, changed the accent
+        // or moved to another monitor. Windows re-themes the caption itself, so the decision is
+        // re-made rather than assumed to still be right. Base runs first: it is what refreshes the
+        // SystemInformation values the decision reads.
+        if (m.Msg == WmSettingChange && IsHandleCreated)
+            ApplyWindowChrome("system settings changed");
+    }
+
+    private void ApplyWindowChrome(string why)
+    {
+        // Never fatal: a refused DWM call leaves the caption Windows already drew.
+        var result = WindowChrome.Apply(Handle);
+        _chrome = result;
+        Trace.WriteLine($"[meme-fryer] title bar ({why}): {result.Plan.Reason}; {result.Detail}");
+    }
 
     protected override CreateParams CreateParams
     {

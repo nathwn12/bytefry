@@ -40,6 +40,9 @@ internal static class Program
             Console.WriteLine("packaging invariants");
             PackagingChecks(runner);
 
+            Console.WriteLine("native title bar");
+            ChromeChecks(runner);
+
             Console.WriteLine("window and installer icon");
             IconChecks(runner);
 
@@ -1058,6 +1061,161 @@ internal static class Program
     }
 
     // --------------------------------------------------------------------- icon
+
+    /// <summary>
+    /// The window's caption is Windows' own: the host asks DWM for colours and draws nothing. These
+    /// checks hold the parts that are hard to see by eye — the fallbacks for old Windows builds, high
+    /// contrast, a palette that moved, and the styles a custom title bar would quietly take away.
+    /// </summary>
+    private static void ChromeChecks(Runner runner)
+    {
+        runner.Check("the caption plan is right on every Windows build it can meet", () =>
+        {
+            // Dark tells whether a dark caption is asked for; Colors whether a colour is asked for
+            // at all; Attribute 0 means the build has nothing to ask.
+            var rows = new (Version Build, bool HighContrast, bool Dark, int Attribute, bool Colors, string Name)[]
+            {
+                (new Version(10, 0, 26100, 0), false, true, 20, true, "Windows 11 24H2"),
+                (new Version(10, 0, 22631, 0), false, true, 20, true, "Windows 11 23H2"),
+                (new Version(10, 0, 19045, 0), false, true, 20, false, "Windows 10 22H2"),
+                (new Version(10, 0, 18985, 0), false, true, 20, false, "Windows 10 2004: the first documented attribute 20"),
+                (new Version(10, 0, 18363, 0), false, true, 19, false, "Windows 10 1909: attribute 19"),
+                (new Version(10, 0, 17763, 0), false, true, 19, false, "Windows 10 1809: the first dark caption"),
+                (new Version(10, 0, 17134, 0), false, false, 0, false, "Windows 10 1803: nothing to ask for"),
+                (new Version(6, 3, 9600, 0), false, false, 0, false, "Windows 8.1"),
+                (new Version(10, 0, 26100, 0), true, false, 20, false, "Windows 11 in high contrast"),
+                (new Version(10, 0, 19045, 0), true, false, 20, false, "Windows 10 in high contrast"),
+            };
+
+            foreach (var row in rows)
+            {
+                var plan = WindowChrome.Decide(row.Build, row.HighContrast);
+
+                Runner.Require(plan.DarkTitleBar == row.Dark,
+                    $"{row.Name}: dark title bar {plan.DarkTitleBar}, expected {row.Dark}");
+                Runner.Require(plan.DarkModeAttribute == row.Attribute,
+                    $"{row.Name}: attribute {plan.DarkModeAttribute}, expected {row.Attribute}");
+                Runner.Require((plan.CaptionColor is not null) == row.Colors,
+                    $"{row.Name}: caption colour {Hex(plan.CaptionColor)}, expected {(row.Colors ? "one" : "none")}");
+                Runner.Require((plan.CaptionTextColor is not null) == (plan.CaptionColor is not null),
+                    $"{row.Name}: a caption fill without its text colour");
+                Runner.Require(plan.Reason.Length > 0, $"{row.Name}: no reason given for the decision");
+                Runner.Require(plan.Supported == (row.Attribute != 0),
+                    $"{row.Name}: Supported disagrees with the attribute it carries");
+            }
+        });
+
+        runner.Check("high contrast hands a coloured caption back to the system", () =>
+        {
+            var plan = WindowChrome.Decide(new Version(10, 0, 26100, 0), highContrast: true);
+            Runner.Require(!plan.DarkTitleBar, "high contrast still asks for a dark caption");
+            Runner.Require(plan.CaptionColor is null && plan.CaptionTextColor is null,
+                "high contrast still asks for a caption colour it cannot know the palette of");
+            Runner.Require(plan.SupportsCaptionColor,
+                "high contrast on Windows 11 would leave a caption coloured before it was switched on");
+
+            // Windows 10 has no such attribute: naming it there would be an invented call, not a clear.
+            var legacy = WindowChrome.Decide(new Version(10, 0, 19045, 0), highContrast: true);
+            Runner.Require(!legacy.SupportsCaptionColor, "Windows 10 claims a caption colour attribute it does not have");
+        });
+
+        runner.Check("the caption paints the app's own header and text colours", () =>
+        {
+            // The page's top bar is --panel and sits directly under the caption; --text is the colour
+            // of every label on it. If the app's palette moves, this goes red here instead of shipping
+            // a title bar that no longer joins the page.
+            var css = File.ReadAllText(Path.Combine(RepoPath("app"), "styles.css"));
+
+            var panel = CssColor(css, "--panel");
+            var text = CssColor(css, "--text");
+
+            Runner.Require(WindowChrome.CaptionColor.ToArgb() == panel.ToArgb(),
+                $"app/styles.css --panel is {Hex(panel)} but the caption paints {Hex(WindowChrome.CaptionColor)}");
+            Runner.Require(WindowChrome.CaptionTextColor.ToArgb() == text.ToArgb(),
+                $"app/styles.css --text is {Hex(text)} but the caption text paints {Hex(WindowChrome.CaptionTextColor)}");
+        });
+
+        runner.Check("a caption colour reaches the window as Windows' COLORREF", () =>
+        {
+            // COLORREF is 0x00BBGGRR, so #0E131A is 0x001A130E. Handing Windows the RGB value is the
+            // classic way to paint a caption a colour nobody designed.
+            Runner.Require(ColorTranslator.ToWin32(WindowChrome.CaptionColor) == 0x001A130E,
+                $"the caption COLORREF is 0x{ColorTranslator.ToWin32(WindowChrome.CaptionColor):X8}, expected 0x001A130E");
+            Runner.Require(ColorTranslator.ToWin32(WindowChrome.CaptionTextColor) == 0x00F7EEE7,
+                $"the caption text COLORREF is 0x{ColorTranslator.ToWin32(WindowChrome.CaptionTextColor):X8}, expected 0x00F7EEE7");
+        });
+
+        runner.Check("a window with no handle is reported, never thrown at", () =>
+        {
+            // Called from a handle-created path, so a throw here would take the app down instead of
+            // leaving one light caption on a dark app.
+            var result = WindowChrome.Apply(IntPtr.Zero);
+
+            Runner.Require(!result.DarkModeAccepted && !result.CaptionAccepted, "an absent window was reported as themed");
+            Runner.Require(result.Detail.Contains("handle", StringComparison.OrdinalIgnoreCase),
+                $"the refusal does not say what was missing: {result.Detail}");
+            Runner.Require(result.Plan.Reason.Length > 0, "the refusal carries no reason");
+        });
+
+        runner.Check("an absent window cannot pass the native-caption check", () =>
+        {
+            // The gate the self-check reads has to be able to go red, or it proves nothing.
+            Runner.Require(WindowChrome.MissingCaptionStyles(IntPtr.Zero).Count > 0,
+                "an absent window reported a complete native caption");
+        });
+
+        runner.Check("the host asks DWM for the caption instead of drawing one", () =>
+        {
+            var hostDir = Path.Combine(RepoPath("desktop"), "MemeFryer.Desktop");
+            var sources = Directory
+                .EnumerateFiles(hostDir, "*.cs", SearchOption.AllDirectories)
+                .Where(file => !file.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}") &&
+                               !file.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}"))
+                .ToList();
+
+            Runner.Require(sources.Count > 0, "no host source was scanned, so the check proves nothing");
+
+            // A custom title bar is not a style choice: it takes away the drag region, Snap Layouts,
+            // the system menu, keyboard access and Windows' own automation for the caption, and no
+            // off-screen check here can see whether the replacement actually works.
+            foreach (var file in sources)
+            {
+                var text = File.ReadAllText(file);
+                foreach (var forbidden in new[] { "FormBorderStyle", "NCCALCSIZE", "WM_NCHITTEST", "ExtendFrameIntoClientArea" })
+                {
+                    Runner.Require(!text.Contains(forbidden, StringComparison.Ordinal),
+                        $"{Path.GetFileName(file)} draws its own window frame ({forbidden})");
+                }
+            }
+
+            var form = File.ReadAllText(Path.Combine(hostDir, "MainForm.cs"));
+            Runner.Require(form.Contains("WindowChrome.Apply(Handle)", StringComparison.Ordinal),
+                "the form never asks DWM for the caption");
+            Runner.Require(form.Contains("OnHandleCreated", StringComparison.Ordinal),
+                "the caption would not survive a recreated window handle");
+            Runner.Require(form.Contains("WmSettingChange", StringComparison.Ordinal),
+                "the caption is not re-decided when the system theme or contrast changes");
+
+            var selfCheck = File.ReadAllText(Path.Combine(hostDir, "SelfCheck.cs"));
+            Runner.Require(selfCheck.Contains("MissingCaptionStyles", StringComparison.Ordinal),
+                "the off-screen self-check does not prove the native caption is still there");
+            Runner.Require(selfCheck.Contains("DWM accepted the dark title bar", StringComparison.Ordinal),
+                "the off-screen self-check does not prove DWM accepted the dark caption");
+        });
+    }
+
+    private static string Hex(Color? color) =>
+        color is { } value ? $"#{value.R:X2}{value.G:X2}{value.B:X2}" : "(none)";
+
+    /// <summary>Reads one hex token out of <c>app/styles.css</c>.</summary>
+    private static Color CssColor(string css, string token)
+    {
+        var match = System.Text.RegularExpressions.Regex.Match(
+            css, System.Text.RegularExpressions.Regex.Escape(token) + @":\s*(#[0-9a-fA-F]{6})\s*;");
+
+        Runner.Require(match.Success, $"app/styles.css no longer declares {token}");
+        return ColorTranslator.FromHtml(match.Groups[1].Value);
+    }
 
     /// <summary>
     /// The icon is one file used three ways: the exe's Win32 resource, the window's <c>Form.Icon</c> and

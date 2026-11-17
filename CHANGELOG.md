@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- The window's title bar is the native Windows caption, painted to match the app rather than
+  redrawn by it. The host asks DWM for its immersive dark mode and, on Windows 11, for the caption
+  and title colours the page's own top bar and text use. Because nothing is drawn, the drag region,
+  Snap Layouts, Alt+Space and the system menu, the buttons and the resize border stay Windows' own;
+  high contrast is left entirely to the system palette, and a Windows 10 build gets a dark caption
+  with Windows' own title colour, which is all its DWM offers.
+
 ## [0.1.2]
 
 Two defects in the image controls and one wrong sentence in the README, all
