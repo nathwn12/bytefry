@@ -1,22 +1,61 @@
 /*
- * What quality the save actually asks the encoder for.
+ * What the save actually writes, at the quality the controls say.
  *
  * The Quality slider under JPEG runs from 0 to 0.5, so 0 is a value a user can
- * choose, and the app must pass it through. A truthiness test on the parsed
- * value treats 0 as "nothing chosen" and silently exports at 0.8 instead: the
- * slider says 0, the file comes back at high quality, and nothing reports it.
+ * choose. A truthiness test on the parsed value treats it as "nothing chosen"
+ * and saves a 0.8 file instead: the slider says 0, the file comes back at high
+ * quality, and nothing reports it.
  *
- * The two documented defaults are pinned here as well, so a fix for 0 cannot
- * quietly move them:
+ * Every claim here is about the saved payload, not about the encoder argument:
  *
- *   - the after-filters pass on: the slider's value, whatever it is;
- *   - the after-filters pass off: 0.8, and the slider does not override it.
+ *   - the blob the browser fallback hands to its download link is read back and
+ *     compared, byte for byte, with the same canvas encoded at the expected
+ *     quality and at the 0.8 default;
+ *   - the data URL the host branch passes to `fryerHost.saveImage` is compared
+ *     the same way, so the route the desktop app uses is covered too.
  *
- * Every check is an equality on the recorded encoder argument, plus one size
- * comparison proving a quality of 0 reached the encoder rather than being
- * recorded and discarded. Nothing here measures wall-clock time.
+ * The comparisons are always against one canvas at one instant: the slider also
+ * feeds the JPEG crush passes, so two saves of two different renders can differ
+ * for a reason that has nothing to do with the save's quality. Each save is
+ * followed immediately by the reference encodes, with no re-render between.
+ *
+ * The documented defaults are pinned as well, so a fix for 0 cannot quietly
+ * move them: the slider's value while the after-filters pass is on, and 0.8
+ * while it is off.
+ *
+ * No wall-clock assertion anywhere: renders are waited for on the status line,
+ * and a save resolves through the app's own promise.
  */
 import { PROBE } from './lib/probe.mjs';
+
+const JPEG_PREFIX = 'data:image/jpeg;base64,/9j/';
+
+function isJpeg(prefix) {
+    return String(prefix || '').startsWith(JPEG_PREFIX);
+}
+
+/* Counts completed renders: a processing phase followed by "Done". */
+const RENDER_WATCH = `(() => {
+    if (window.__watch) return 'already installed';
+    const status = document.getElementById('statustext');
+    const phases = ['Rendering', 'Recompressing', 'Applying filters'];
+    const watch = { cycles: 0, processing: false };
+    new MutationObserver(() => {
+        const text = status.textContent;
+        if (phases.indexOf(text) >= 0) watch.processing = true;
+        else if (text === 'Done' && watch.processing) { watch.processing = false; watch.cycles += 1; }
+    }).observe(status, { childList: true, characterData: true, subtree: true });
+    window.__watch = watch;
+    return 'installed';
+})()`;
+
+/** Runs an action that starts a render, and returns when that render is done. */
+async function afterRender(page, action) {
+    const before = await page.evaluate('window.__watch.cycles');
+    await page.evaluate(action);
+    await page.waitFor(`window.__watch.cycles > ${before}`, 120000);
+    await page.waitFor('document.getElementById("statustext").textContent === "Done"', 30000);
+}
 
 async function openInApp(browser, base) {
     const page = await browser.openPage(`${base}/current/index.html`);
@@ -25,7 +64,7 @@ async function openInApp(browser, base) {
     try {
         await page.send('Page.setDownloadBehavior', { behavior: 'deny' });
     } catch (error) {
-        /* the encode is what is under test, not the download */
+        /* the payload is captured in the page, so the download itself does not matter */
     }
     return page;
 }
@@ -52,21 +91,41 @@ async function loadAndWait(page, fixture) {
     await page.waitFor('document.getElementById("statustext").textContent === "Done"', 60000);
 }
 
-/** Saves once through the app's own export path and reports the encode it took. */
-async function saveAndRecord(page) {
-    return page.evaluateJson(`(() => {
-        window.__t.armEncodes();
+async function setControl(page, id, value) {
+    await afterRender(page, `(() => {
+        const control = document.getElementById(${JSON.stringify(id)});
+        control.value = ${JSON.stringify(String(value))};
+        control.dispatchEvent(new Event('input', { bubbles: true }));
+        control.dispatchEvent(new Event('change', { bubbles: true }));
+        return true;
+    })()`);
+}
+
+/**
+ * Saves through the browser fallback, then encodes the same canvas at the given
+ * qualities. Returns the saved payload beside the references it is judged by;
+ * nothing re-renders in between.
+ */
+async function saveThroughFallback(page, qualities) {
+    const saved = await page.evaluateJson(`(async () => {
+        window.__t.armSave();
         window.__t.pressSave();
-        const list = JSON.parse(window.__t.encodeList());
-        const last = list.length ? list[list.length - 1] : null;
+        const payload = await window.__t.savedPayload();
+        const encodes = JSON.parse(window.__t.encodeList());
+        const last = encodes.length ? encodes[encodes.length - 1] : null;
         return JSON.stringify({
-            count: list.length,
-            type: last ? last[0] : 'none',
-            quality: last ? last[1] : 'none',
-            bytes: last ? last[2] : 0,
+            payload: JSON.parse(payload),
+            qualityAsked: last ? last[1] : 'none',
+            references: ${JSON.stringify(qualities)}.map(quality => window.__t.canvasEncode(quality)),
             status: document.getElementById('statustext').textContent
         });
     })()`);
+
+    return {
+        ...saved,
+        references: Object.fromEntries(saved.references.map((entry, index) =>
+            [String(qualities[index]), JSON.parse(entry)]))
+    };
 }
 
 export const name = 'export-quality';
@@ -76,61 +135,112 @@ export async function run({ browser, base, fixtures }) {
     const small = fixtures[0];
     const page = await openInApp(browser, base);
 
+    await page.evaluate(RENDER_WATCH);
     await loadAndWait(page, small);
 
-    /* The documented default: with "after filters" on, the slider is the save's
-     * quality. 0.175 is the shipped value of that slider. */
-    const shipped = await saveAndRecord(page);
+    /* ---- the documented path: the slider is the save's quality ---- */
+
+    const shipped = await saveThroughFallback(page, [0.175, 0.8]);
     checks.push({
-        name: 'with the after-filters pass on, the save encodes at the slider value',
-        ok: shipped.count === 1 && shipped.type === 'image/jpeg' && shipped.quality === 0.175,
-        detail: JSON.stringify(shipped)
+        name: 'a save at the shipped 0.175 writes that canvas encoded at 0.175',
+        ok: shipped.payload.ok === true && shipped.payload.type === 'image/jpeg' &&
+            shipped.qualityAsked === 0.175 &&
+            shipped.payload.hash === shipped.references['0.175'].hash,
+        detail: JSON.stringify({ payload: shipped.payload, asked: shipped.qualityAsked,
+            at0175: shipped.references['0.175'] })
+    });
+    checks.push({
+        name: 'that save is not the 0.8 encode of the same canvas',
+        ok: shipped.payload.hash !== shipped.references['0.8'].hash,
+        detail: `saved ${shipped.payload.hash}, 0.8 would be ${shipped.references['0.8'].hash}`
     });
 
-    /* The zero case. The slider permits 0, so the save must encode at 0 and the
-     * file that comes back must be the smaller one: a recorded 0 that produced
-     * 0.8-sized bytes would be the same defect wearing a different hat. */
-    await page.evaluateJson(`(() => {
-        const quality = document.getElementById('jpeg_quality');
-        quality.value = '0';
-        quality.dispatchEvent(new Event('input', { bubbles: true }));
-        quality.dispatchEvent(new Event('change', { bubbles: true }));
-        return true;
-    })()`);
-    await page.waitFor('document.getElementById("statustext").textContent === "Done"', 120000);
+    /* ---- the zero case ---- */
 
-    const zero = await saveAndRecord(page);
+    await setControl(page, 'jpeg_quality', 0);
+
+    const zero = await saveThroughFallback(page, [0, 0.8]);
     checks.push({
-        name: 'a quality slider at 0 exports at 0, not at the 0.8 default',
-        ok: zero.count === 1 && zero.type === 'image/jpeg' && zero.quality === 0,
-        detail: JSON.stringify(zero)
+        name: 'a quality slider at 0 writes that canvas encoded at 0, not at the 0.8 default',
+        ok: zero.payload.ok === true &&
+            zero.payload.hash === zero.references['0'].hash &&
+            zero.payload.hash !== zero.references['0.8'].hash,
+        detail: JSON.stringify({ payload: zero.payload, asked: zero.qualityAsked,
+            at0: zero.references['0'], at08: zero.references['0.8'] })
     });
     checks.push({
-        name: 'the quality-0 export is a real JPEG, smaller than the 0.175 one',
-        ok: zero.bytes > 0 && shipped.bytes > 0 && zero.bytes < shipped.bytes,
-        detail: `0.175 writes ${shipped.bytes} chars, 0 writes ${zero.bytes}`
+        name: 'the saved quality-0 file is a real JPEG, smaller than the 0.8 encode of the same canvas',
+        ok: zero.payload.type === 'image/jpeg' && zero.payload.blobBytes > 0 &&
+            isJpeg(zero.payload.prefix) &&
+            zero.payload.bytes < zero.references['0.8'].bytes,
+        detail: `saved ${zero.payload.blobBytes} bytes as "${zero.payload.prefix}", ` +
+            `0.8 would be ${zero.references['0.8'].bytes} chars`
     });
     checks.push({
-        name: 'the export still reports itself saved',
+        name: 'the save still reports itself written',
         ok: /^Exported /.test(zero.status),
         detail: `status "${zero.status}"`
     });
 
-    /* With the after-filters pass off the save is 0.8 by design, and the slider
-     * must not leak into it - the pre-existing behaviour this fix leaves alone. */
-    await page.evaluateJson(`(() => {
+    /* ---- the native route: the same payload reaches fryerHost.saveImage ---- */
+
+    const native = await page.evaluateJson(`(async () => {
+        window.__nativeCalls = [];
+        window.fryerHost = {
+            available: true,
+            version: 1,
+            saveImage: function (args) {
+                window.__nativeCalls.push(args);
+                return Promise.resolve({ path: 'C:\\\\out\\\\deepfried.jpg' });
+            }
+        };
+        window.__t.armSave();
+        window.__t.pressSave();
+        return JSON.stringify({ calls: window.__nativeCalls.length });
+    })()`);
+    await page.waitFor('document.getElementById("statustext").textContent === "Saved deepfried.jpg"', 30000);
+
+    const nativePayload = await page.evaluateJson(`(() => {
+        const call = window.__nativeCalls[0] || {};
+        const reference = JSON.parse(window.__t.canvasEncode(0));
+        const elsewhere = JSON.parse(window.__t.canvasEncode(0.8));
+        return JSON.stringify({
+            calls: window.__nativeCalls.length,
+            mime: call.mime,
+            hasName: typeof call.suggestedName === 'string' && call.suggestedName.length > 0,
+            saved: JSON.parse(window.__t.fingerprint(call.dataUrl)),
+            at0: reference,
+            at08: elsewhere
+        });
+    })()`);
+
+    checks.push({
+        name: 'the native save receives the quality-0 payload of the same canvas',
+        ok: native.calls === 1 && nativePayload.mime === 'image/jpeg' && nativePayload.hasName &&
+            isJpeg(nativePayload.saved.prefix) &&
+            nativePayload.saved.hash === nativePayload.at0.hash &&
+            nativePayload.saved.hash !== nativePayload.at08.hash,
+        detail: JSON.stringify(nativePayload)
+    });
+
+    /* ---- the documented default: after-filters off is 0.8, slider or not ---- */
+
+    await page.evaluate(`(() => { delete window.fryerHost; return true; })()`);
+    await afterRender(page, `(() => {
         const after = document.getElementById('jpeg-after');
         after.checked = false;
         after.dispatchEvent(new Event('change', { bubbles: true }));
         return true;
     })()`);
-    await page.waitFor('document.getElementById("statustext").textContent === "Done"', 120000);
 
-    const fallback = await saveAndRecord(page);
+    const fallback = await saveThroughFallback(page, [0.8, 0]);
     checks.push({
-        name: 'with the after-filters pass off, the save is JPEG 0.8 whatever the slider says',
-        ok: fallback.count === 1 && fallback.type === 'image/jpeg' && fallback.quality === 0.8,
-        detail: JSON.stringify(fallback)
+        name: 'with the after-filters pass off, the save writes the 0.8 encode whatever the slider says',
+        ok: fallback.payload.ok === true && fallback.qualityAsked === 0.8 &&
+            fallback.payload.hash === fallback.references['0.8'].hash &&
+            fallback.payload.hash !== fallback.references['0'].hash,
+        detail: JSON.stringify({ payload: fallback.payload, asked: fallback.qualityAsked,
+            slider: 0, at08: fallback.references['0.8'] })
     });
 
     await page.close();
