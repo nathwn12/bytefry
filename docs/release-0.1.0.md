@@ -94,8 +94,10 @@ above.
 
 ## Checks
 
-No output from this gate was recorded for 0.1.0, and this file does not claim it passed. The commands
-are the gate and are unchanged, so they can be re-run against the tag. In order:
+No durable receipt for this gate is on file for 0.1.0: the release page carries its notes and its
+assets, and neither that page nor this repository carries the gate's output. Whether it ran at the time
+is therefore not recorded anywhere this document can cite, and nothing here claims it passed. The
+commands are the gate and are unchanged, so they can be re-run against the tag. In order:
 
 1. `node third_party/camanjs/verify.mjs` and `node third_party/glfx/verify.mjs` — offline and
    dependency-free: they prove the shipped `app/vendor/` bytes are the pinned upstream artifacts and that
@@ -143,7 +145,9 @@ above.
       archives and the curated source zip; the SHA-256 values are in *Released assets*.
 - [x] Release notes name the tag as the Corresponding Source and state that the upstream credits and
       third-party notices are included.
-- [ ] Owner approval of the release text and the assets: unverified. Publication under the `nathwn12`
-      account is a receipt that the page was published, not that the text and the assets were approved,
-      and no separate approval is on file that this record can cite.
-- [ ] Checks run and recorded: no output was written down for this version — see *Checks*.
+- [ ] Owner approval of the release text and the assets: no durable receipt. The release was published
+      under the `nathwn12` account, which shows the page went out; an approval may well have been given,
+      but none is recorded in an artifact this repository or the release page carries, so this record
+      cannot cite one.
+- [ ] The publication-day gate, packaging included: no durable receipt on file for this version — see
+      *Checks*.

@@ -119,7 +119,17 @@ above.
 
 ## Checks
 
-Re-run on 2026-11-17 from a tree that differs from tag `v0.1.1` (tree `e3f8828`) only in documentation:
+Two runs are involved, and they are not the same evidence.
+
+**Publication day — 2026-11-16, before the release, on `2ab8d0b`.** The session that published 0.1.1
+recorded `node tests/run.mjs` at 76 passed, both `third_party/*/verify.mjs` ok, `desktop/test.ps1` at 63
+passed with every check window-free, and `pwsh -File desktop/build.ps1 -Installer` succeeding — which is
+where the attached installer came from. The icon check is not in that record. None of the output is on
+the release page or in this repository: it is the build session's record, not a receipt a reader can
+check independently.
+
+**This record — 2026-11-17, from a tree that differs from tag `v0.1.1` (tree `e3f8828`) only in
+documentation.** A re-run, not the tag build:
 
 | Check | Command | Result |
 |---|---|---|
@@ -128,11 +138,12 @@ Re-run on 2026-11-17 from a tree that differs from tag `v0.1.1` (tree `e3f8828`)
 | Icon | `python desktop/MemeFryer.Desktop/Assets/make-icon.py --check` | ok — a fresh render of `assets/icon.svg` reproduces the committed `.ico`, and `icon.lock` agrees |
 | Window-free suite | `pwsh -File desktop/test.ps1` | all window-free checks passed: 63 passed, 0 failed, 0 skipped, plus the self-check report gate |
 | Web layer | `node tests/run.mjs` | 76 passed, 0 failed |
-| Packaging | `pwsh -File desktop/build.ps1 -Installer` | not run for this record; the attached assets were built from the tag |
-| Self-check (`-Verify`) | `pwsh -File desktop/build.ps1 -Verify` | not run for this record: it parks a real window outside every monitor, so it is off-screen rather than headless |
+| Packaging | `pwsh -File desktop/build.ps1 -Installer` | no durable receipt from this record — the re-run covered the five rows above and stopped there |
+| Self-check (`-Verify`) | `pwsh -File desktop/build.ps1 -Verify` | no receipt in either run; it parks a real window outside every monitor, so it is off-screen rather than headless |
 
-`-Verify` stays opt-in and nothing here drives the native window or the Open/Save dialogs, so those
-remain unverified. Do not uninstall an existing installation as part of verification.
+`-Verify` stays opt-in. No receipt records it running, and nothing in the re-run drives the native
+window or the Open/Save dialogs, so those stay unverified rather than checked. Do not uninstall an
+existing installation as part of verification.
 
 `node tests/bench.mjs` is optional and not a gate: it prints where a load spends its time, and it fails
 only if two scripts produce different bytes, never on a timing difference. Quote its numbers only from
@@ -160,8 +171,8 @@ Bundled unchanged: CamanJS (BSD-3-Clause, 2010 Ryan LeFevre) and glfx.js (MIT, 2
 ## Publication record
 
 Receipts this repository can cite: the release pages exist and are published under the `nathwn12`
-account, the tags are objects in this repository, and each attached asset downloads with the digest
-above.
+account, the tags are objects in this repository, each attached asset downloads with the digest above,
+and the shipped executable reports its own version.
 
 - [x] `0.1.1` in `MemeFryer.Desktop.csproj`, `CHANGELOG.md` and this file agree, and the executable in
       the attached portable archive reports `FileVersion 0.1.1.0` and
@@ -170,15 +181,18 @@ above.
       source archives and the curated source zip; the SHA-256 values are in *Released assets*.
 - [x] The 0.1.0 release stays as published: both release pages exist, and this one is a new release.
 - [x] Release notes state that the corresponding source and third-party notices are included.
-- [x] Five of the gate's steps were recorded by re-running them on the tagged tree — both third-party
-      verifiers, `make-icon.py --check`, `desktop/test.ps1` (63 passed, 0 failed) and
-      `node tests/run.mjs` (76 passed, 0 failed); the results are in *Checks*.
-- [ ] Owner approval of the release text and the assets: unverified. Publication under the `nathwn12`
-      account is a receipt that the page was published, not that the text and the assets were approved,
-      and no separate approval is on file that this record can cite.
+- [x] Five of the gate's steps were re-run for this record — both third-party verifiers,
+      `make-icon.py --check`, `desktop/test.ps1` (63 passed, 0 failed) and `node tests/run.mjs`
+      (76 passed, 0 failed); *Checks* gives the results and says which tree they came from.
+- [ ] Owner approval of the release text and the assets: no durable receipt. The owner asked for the
+      release carrying the new icon and the installer in the session that produced 0.1.1; that request
+      lives in session context, not in an artifact this repository or the release page carries, so this
+      record cannot cite it as proof.
+- [ ] The publication-day gate, packaging included: no durable receipt. The build session recorded
+      `node tests/run.mjs` at 76 passed, both verifiers ok, `desktop/test.ps1` at 63 passed and a
+      successful `-Installer` build, all before the release — see *Checks*.
+- [ ] `-Verify`: no receipt in either the publication-day record or the re-run, so the native window and
+      the dialogs remain unverified rather than checked.
 - [ ] Release notes name the tag as the Corresponding Source: missing from the 0.1.1 notes, where the
       0.1.0 notes do name it. The tag's own source archives are on the release page either way, so the
       licence condition is met; the sentence is simply absent.
-- [ ] Packaging: not run for this record, so the attached binaries are not verified by the checks above.
-- [ ] The opt-in `-Verify` self-check: not run for this record, so the native window and the Open/Save
-      dialogs stay unverified.
