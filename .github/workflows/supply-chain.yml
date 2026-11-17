@@ -1,0 +1,30 @@
+name: supply-chain
+
+# Free-tier GitHub-hosted check on a public repository.
+on:
+  schedule:
+    - cron: "17 19 * * 0"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supply-chain
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+      - name: Restore
+        run: dotnet restore desktop/MemeFryer.Desktop/MemeFryer.Desktop.csproj
+      - name: Audit dependencies
+        run: |
+          dotnet list desktop/MemeFryer.Desktop/MemeFryer.Desktop.csproj package --vulnerable --include-transitive | tee audit.txt
+          if grep -q "has the following vulnerable packages" audit.txt; then
+            echo "Vulnerable packages found" >&2
+            exit 1
+          fi
