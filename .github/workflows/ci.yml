@@ -6,13 +6,18 @@
 # house ones: same name, windows-latest, read-only token.
 #
 # Every step is headless-safe. The one check that needs a real window -
-# build.ps1 -Verify, which parks an off-screen WebView2 window to compose the app -
+# build.mjs --verify, which parks an off-screen WebView2 window to compose the app -
 # is NOT run here; the last step says so out loud.
 #
 # Order matters: the provenance checks run first because they need only Node and
-# fail in seconds; desktop/test.ps1 then drives dist/portable/Bytefry.exe when it
+# fail in seconds; desktop/test.mjs then drives dist/portable/Bytefry.exe when it
 # exists, so the publish runs before that suite, which tests the shipped
 # single-file binary rather than a framework-dependent apphost.
+#
+# One command per step, on purpose: a step's shell reports only the last exit code,
+# so two commands in one block let the first failure be masked (measured here:
+# node exit 3 then node exit 0 leaves the block at 0). The steps are Node and bash
+# because this repository carries no PowerShell.
 #
 # Public CI runs on pushes and pull requests; manual runs remain available.
 name: ci
@@ -49,35 +54,28 @@ jobs:
       # endings, file count, and the registration/method surface the sources
       # declare. Offline, dependency-free, read-only, seconds to run, and they
       # need nothing but Node, so they gate before the publish.
-      #
-      # One command per step, on purpose. GitHub prepends
-      # `$ErrorActionPreference = 'stop'` to a pwsh step and appends
-      # `if ((Test-Path -LiteralPath variable:\LASTEXITCODE)) { exit $LASTEXITCODE }`,
-      # so a non-zero node exit fails the step. That wrapper reads only the LAST
-      # exit code, so two commands in one block let the first failure be masked
-      # (measured here: node exit 3 then node exit 0 leaves the block at 0).
       - name: Verify bundled CamanJS source
-        shell: pwsh
+        shell: bash
         run: node third_party/camanjs/verify.mjs
 
       - name: Verify bundled glfx source
-        shell: pwsh
+        shell: bash
         run: node third_party/glfx/verify.mjs
 
       # Publish the portable folder: dist/portable/Bytefry.exe, self-contained and
-      # single-file, with app/ and NOTICE.md beside it. The installer (-Installer,
+      # single-file, with app/ and NOTICE.md beside it. The installer (--installer,
       # Inno Setup 6) is a release artefact, not a per-push gate; the image does
       # carry the Inno Setup compiler if that ever changes.
       - name: Build the portable host
-        shell: pwsh
-        run: pwsh -NoProfile -File desktop/build.ps1 -Configuration Release
+        shell: bash
+        run: node desktop/build.mjs --configuration Release
 
       # Window-free: no Form, no WebView2, no message box. Covers app-folder
       # resolution, the bridge host, the injected script, packaging invariants,
       # the icon, the command line, and the self-check report gate.
       - name: Test the host
-        shell: pwsh
-        run: pwsh -NoProfile -File desktop/test.ps1 -Configuration Release
+        shell: bash
+        run: node desktop/test.mjs --configuration Release
 
       # Deterministic gates only: drop-safety and load-parity, with no wall-clock
       # assertion anywhere, so a busy runner cannot turn this red. The suite serves
@@ -92,13 +90,13 @@ jobs:
       # windows-latest ships both Chrome and Edge, so no environment variable is
       # needed; set FRYER_CHROME only if an image ever moves one of them.
       - name: Test the web layer
-        shell: pwsh
+        shell: bash
         run: node tests/run.mjs
 
       - name: The off-screen self-check is not run here
-        shell: pwsh
+        shell: bash
         run: |
-          Write-Host 'Skipped: build.ps1 -Verify parks a window outside every monitor for'
-          Write-Host 'WebView2 to compose the page. A hosted runner cannot be trusted to'
-          Write-Host 'compose it, so the check stays opt-in. Run it locally:'
-          Write-Host '  pwsh -File desktop/build.ps1 -Verify'
+          echo 'Skipped: node desktop/build.mjs --verify parks a window outside every monitor'
+          echo 'for WebView2 to compose the page. A hosted runner cannot be trusted to'
+          echo 'compose it, so the check stays opt-in. Run it locally:'
+          echo '  node desktop/build.mjs --verify'

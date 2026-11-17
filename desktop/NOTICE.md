@@ -24,7 +24,7 @@ because it ships as one program with `app/`: one executable serving one bundle.
 
 ## What a distributable carries
 
-`build.ps1` copies this file to the root of the portable folder and copies `app/` beside the
+`build.mjs` copies this file to the root of the portable folder and copies `app/` beside the
 executable, so a built bundle carries every notice it needs:
 
 | File in the bundle | What it is |
