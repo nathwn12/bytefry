@@ -15,13 +15,20 @@ concurrency:
 
 jobs:
   audit:
-    runs-on: ubuntu-26.04
+    # The desktop host targets net10.0-windows, so restore only works on
+    # Windows. A Linux runner fails with NETSDK1100 and this project sets
+    # EnableWindowsTargeting to false on purpose: it is a Windows app, so the
+    # audit runs where the app actually restores.
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-dotnet@v6
       - name: Restore
         run: dotnet restore desktop/MemeFryer.Desktop/MemeFryer.Desktop.csproj
       - name: Audit dependencies
+        # Git Bash on the Windows image: the pipeline and grep test below are
+        # shell scripts, not PowerShell.
+        shell: bash
         run: |
           dotnet list desktop/MemeFryer.Desktop/MemeFryer.Desktop.csproj package --vulnerable --include-transitive | tee audit.txt
           if grep -q "has the following vulnerable packages" audit.txt; then
