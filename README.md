@@ -4,6 +4,10 @@
 <h1 align="center">Bytefry</h1>
 <p align="center"><strong>Deep-fry an image in a Windows window: repeat-JPEG crush, a WebGL bulge and five filters, all running on your machine, then save.</strong></p>
 
+<p align="center">
+  <img src="assets/screenshot.png" alt="Bytefry editor on Windows, showing the image drop area, filter sliders, JPEG settings and bulge control" />
+</p>
+
 Bytefry is a desktop build of *Meme Deep Fryer*: the original image pipeline, running offline in a
 WinForms window around Microsoft Edge WebView2.
 
