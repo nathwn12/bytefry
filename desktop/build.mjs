@@ -570,7 +570,8 @@ function main() {
   // One command, three files, each checked by what it actually contains: the installer, a portable
   // zip whose entries sit at the archive root, and a source zip of the exact commit built here.
   if (options.release) {
-    const portableZip = join(releaseDir, `Bytefry-${version}-portable-${options.runtime}.zip`);
+    const portableTag = options.runtime === 'win-x64' ? 'x64' : 'arm64';
+    const portableZip = join(releaseDir, `Bytefry-${version}-portable-${portableTag}.zip`);
     buildPortableZip({ portable, file: portableZip });
     const sourceZip = join(releaseDir, `Bytefry-${version}-source.zip`);
     const commit = buildSourceZip({ file: sourceZip, version });
