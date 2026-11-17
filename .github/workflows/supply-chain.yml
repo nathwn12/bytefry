@@ -20,10 +20,10 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-dotnet@v6
       - name: Restore
-        run: dotnet restore
+        run: dotnet restore desktop/MemeFryer.Desktop/MemeFryer.Desktop.csproj
       - name: Audit dependencies
         run: |
-          dotnet list package --vulnerable --include-transitive | tee audit.txt
+          dotnet list desktop/MemeFryer.Desktop/MemeFryer.Desktop.csproj package --vulnerable --include-transitive | tee audit.txt
           if grep -q "has the following vulnerable packages" audit.txt; then
             echo "Vulnerable packages found" >&2
             exit 1
