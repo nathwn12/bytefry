@@ -63,7 +63,6 @@ internal static class Program
             var form = new MainForm(appDir, dev, selfCheckReport);
             Application.Run(form);
 
-            // Only a self-check carries an exit code; a normal session closes when the user closes it.
             return selfCheckReport is null ? 0 : form.SelfCheckExitCode;
         }
         catch (Exception ex)

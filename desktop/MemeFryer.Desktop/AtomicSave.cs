@@ -133,7 +133,6 @@ internal static class AtomicSave
         if (string.IsNullOrEmpty(directory))
             throw new ArgumentException($"path has no directory: {path}", nameof(path));
 
-        // A folder is not a file, and the rename below must never be handed one to replace.
         if (Directory.Exists(destination))
             throw new IOException($"a folder already exists at {destination}");
 
@@ -153,8 +152,6 @@ internal static class AtomicSave
 
                 await stream.FlushAsync(cancellationToken).ConfigureAwait(false);
 
-                // The rename must not land before the bytes do, or a crash leaves a full-looking file
-                // with nothing in it.
                 stream.Flush(flushToDisk: true);
             }
         }
@@ -210,7 +207,6 @@ internal static class AtomicSave
             }
             catch (IOException) when (File.Exists(candidate))
             {
-                // The name was taken between the check and the open: take another.
             }
         }
 
@@ -256,8 +252,6 @@ internal static class AtomicSave
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            // The bytes are written; the file is now readable by its owner and SYSTEM at worst, which
-            // is narrower than the folder asked for. Never fail a completed save over that.
             Trace.WriteLine($"[meme-fryer] could not restore inherited permissions on {destination}: {ex.Message}");
         }
     }
@@ -276,8 +270,6 @@ internal static class AtomicSave
                     $"a file appeared at {destination} after the name was chosen; it was not replaced");
             }
 
-            // No overwrite: if the name is taken between that check and this move, the move fails and
-            // the save reports it, rather than replacing a file nobody confirmed.
             File.Move(temp, destination);
             RestoreInheritance(destination);
             return;
@@ -287,8 +279,6 @@ internal static class AtomicSave
 
         if (current.State == DestinationState.Absent)
         {
-            // The file that was confirmed is gone. Creating a new one destroys nothing, and refusing
-            // here would fail a save the user asked for over a race no one lost.
             File.Move(temp, destination);
             RestoreInheritance(destination);
             return;
@@ -296,15 +286,10 @@ internal static class AtomicSave
 
         if (!current.SameAs(expected))
         {
-            // Same name, different file: replaced by another program, or edited after the user said
-            // yes. Its content is not what was shown when that yes was given, so it is left alone.
             throw new IOException(
                 $"the file at {destination} changed after it was confirmed for replacement; it was not replaced");
         }
 
-        // Replace carries the destination's ACLs and attributes onto the new content. A metadata error
-        // is fatal on purpose: a save that cannot keep them must fail rather than hand the user's file
-        // the temporary's permissions. There is no move-over fallback for the same reason.
         try
         {
             File.Replace(temp, destination, destinationBackupFileName: null, ignoreMetadataErrors: false);
@@ -324,11 +309,9 @@ internal static class AtomicSave
         }
         catch (IOException)
         {
-            // Best effort: the caller is already reporting why the save failed.
         }
         catch (UnauthorizedAccessException)
         {
-            // Same.
         }
     }
 

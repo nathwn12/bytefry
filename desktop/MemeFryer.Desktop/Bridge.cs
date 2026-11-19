@@ -107,8 +107,6 @@ internal sealed class Bridge
 
     private JsonNode HostInfo() => new JsonObject
     {
-        // Internal bridge identity, unchanged by the product rename: app/ is a separate lane and
-        // already keys on this value.
         ["host"] = "meme-fryer-desktop",
         ["platform"] = "win32",
         ["arch"] = RuntimeInformation.ProcessArchitecture.ToString().ToLowerInvariant(),
@@ -168,9 +166,6 @@ internal sealed class Bridge
                 DefaultExt = ExtensionFor(mime),
                 AddExtension = true,
                 Filter = SaveFilter(mime, ArgString(args, "filter")),
-                // The native prompt asks before this code knows which file is there, so its answer
-                // cannot be tied to one. The confirmation is asked below, against the file that is
-                // actually on disk, and the save refuses anything that changes after that answer.
                 OverwritePrompt = false,
                 RestoreDirectory = true,
             };
@@ -198,19 +193,11 @@ internal sealed class Bridge
     {
         var full = Path.GetFullPath(target);
 
-        // What the destination is at this instant, with the identity that distinguishes it from another
-        // file of the same name. Taken once, before anything is written, and never re-decided later.
         var expected = AtomicSave.Observe(full);
 
-        // Ask about an existing file only when the user picked the name; an explicit path is a caller
-        // saying what it wants (the self-check's unique name, a batch export). The answer covers the
-        // file that was just read, and the commit refuses the save if that file changes afterwards.
         if (fromDialog && expected.State == DestinationState.Present && !_confirmReplace(full))
             return null;
 
-        // Never File.WriteAllBytes on the destination: it truncates before the new bytes exist, so a
-        // failed write would destroy the image the user asked to overwrite. AtomicSave creates the
-        // folder, stages beside the destination and replaces it in one rename, or leaves it alone.
         await AtomicSave.SaveAsync(full, bytes, expected, write).ConfigureAwait(true);
 
         return new JsonObject
@@ -237,7 +224,6 @@ internal sealed class Bridge
             }
             catch (ExternalException) when (attempt < 5)
             {
-                // Another process can hold the clipboard open for a moment.
                 Thread.Sleep(60);
             }
         }
@@ -270,7 +256,6 @@ internal sealed class Bridge
     {
         if (!dataUrl.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
         {
-            // Tolerate a bare base64 payload.
             return (Convert.FromBase64String(CleanBase64(dataUrl)), null);
         }
 

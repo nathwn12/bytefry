@@ -146,11 +146,9 @@ internal sealed class NodeBridge
         const results = [];
         const check = (name, ok, detail) => results.push({ name, ok: !!ok, detail: detail === undefined ? '' : String(detail) });
 
-        // A browser window has dispatchEvent; the bare object a harness would use does not.
         const dispatched = [];
         const makeWindow = () => ({ dispatchEvent: (event) => { dispatched.push(event.type); return true; } });
 
-        // 1. No WebView2 host: the same surface must exist and refuse to pretend it can do files.
         globalThis.window = makeWindow();
         vm.runInThisContext(source, { filename: 'bridge-script.js' });
         check('browser fallback exposes available:false', globalThis.window.fryerHost && globalThis.window.fryerHost.available === false,
@@ -161,7 +159,6 @@ internal sealed class NodeBridge
         try { await globalThis.window.fryerHost.saveImage({ dataUrl: 'x' }); } catch { threw = true; }
         check('browser fallback saveImage rejects', threw);
 
-        // 2. Fake WebView2 host: id correlation, resolve, reject, unknown id ignored.
         const listeners = [];
         const sent = [];
         const webview = {

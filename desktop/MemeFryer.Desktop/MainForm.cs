@@ -44,8 +44,6 @@ internal sealed class MainForm : Form
 
         if (_selfCheckReportPath is not null)
         {
-            // Headless self-check: a real window is required for WebView2 to compose, so it is sized
-            // normally and parked far outside the virtual desktop instead of being shown on screen.
             StartPosition = FormStartPosition.Manual;
             Location = new Point(-32000, -32000);
             ShowInTaskbar = false;
@@ -68,9 +66,6 @@ internal sealed class MainForm : Form
     {
         base.OnHandleCreated(e);
 
-        // A window is born with the system caption, and a recreated handle is born with it again
-        // (Windows reparents the form on some DPI, theme and session changes). Styling here rather
-        // than once in the constructor is what makes the caption survive that.
         ApplyWindowChrome("window created");
     }
 
@@ -78,17 +73,12 @@ internal sealed class MainForm : Form
     {
         base.WndProc(ref m);
 
-        // WM_SETTINGCHANGE: the user switched light/dark, turned high contrast on, changed the accent
-        // or moved to another monitor. Windows re-themes the caption itself, so the decision is
-        // re-made rather than assumed to still be right. Base runs first: it is what refreshes the
-        // SystemInformation values the decision reads.
         if (m.Msg == WmSettingChange && IsHandleCreated)
             ApplyWindowChrome("system settings changed");
     }
 
     private void ApplyWindowChrome(string why)
     {
-        // Never fatal: a refused DWM call leaves the caption Windows already drew.
         var result = WindowChrome.Apply(Handle);
         _chrome = result;
         Trace.WriteLine($"[meme-fryer] title bar ({why}): {result.Plan.Reason}; {result.Detail}");
@@ -121,7 +111,6 @@ internal sealed class MainForm : Form
 
             if (_selfCheckReportPath is not null)
             {
-                // Never a modal dialog here: a self-check must stay off-screen and still report.
                 Console.Error.WriteLine($"[meme-fryer] self-check failed: the browser engine did not start: {ex.Message}");
                 await SelfCheck.WriteFailureAsync(_selfCheckReportPath, _appDir,
                     "the browser engine did not start", ex);
@@ -160,7 +149,6 @@ internal sealed class MainForm : Form
         core.Settings.IsGeneralAutofillEnabled = false;
         core.Settings.IsSwipeNavigationEnabled = false;
 
-        // DenyCors: the app folder is readable from this origin and from nobody else.
         core.SetVirtualHostNameToFolderMapping(
             AppPaths.VirtualHost,
             _appDir,
@@ -174,7 +162,6 @@ internal sealed class MainForm : Form
         core.NewWindowRequested += OnNewWindowRequested;
         core.PermissionRequested += OnPermissionRequested;
 
-        // Must be registered before the first navigation so the page sees window.fryerHost.
         await core.AddScriptToExecuteOnDocumentCreatedAsync(BridgeScript.Source);
 
         core.Navigate($"https://{AppPaths.VirtualHost}/index.html");
@@ -209,7 +196,6 @@ internal sealed class MainForm : Form
             code = 1;
         }
 
-        // Close instead of exiting so WebView2 tears down its browser process cleanly.
         _selfCheckExitCode = code;
         Close();
     }
@@ -245,7 +231,6 @@ internal sealed class MainForm : Form
     {
         if (IsAllowedUrl(e.Uri)) return;
 
-        // Offline host: nothing leaves the bundled app. No shell hand-off, no redirects.
         e.Cancel = true;
         Trace.WriteLine($"[meme-fryer] blocked navigation: {e.Uri}");
     }

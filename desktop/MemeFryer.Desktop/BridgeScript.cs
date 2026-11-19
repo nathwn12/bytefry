@@ -13,7 +13,6 @@ internal static class BridgeScript
           const announce = () => window.dispatchEvent(new Event('fryerhostready'));
 
           if (!host) {
-            // Running in a plain browser (the app is also a static site). Nothing to bridge to.
             window.fryerHost = Object.freeze({
               available: false,
               version: 0,

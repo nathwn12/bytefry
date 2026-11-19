@@ -142,7 +142,6 @@ internal static class Program
                 }
                 catch (DirectoryNotFoundException)
                 {
-                    // expected: the repo root is out of reach
                 }
             });
 
@@ -286,8 +285,6 @@ internal static class Program
             Directory.CreateDirectory(dir);
             var target = Path.Combine(dir, "racer.png");
 
-            // The save is told the name is free (as the dialog was), then another program wins the
-            // name before the rename. Replacing it would overwrite a file the user never confirmed.
             var error = string.Empty;
             try
             {
@@ -421,8 +418,6 @@ internal static class Program
             var target = Path.Combine(dir, "shared.png");
             var grantees = Array.Empty<string>();
 
-            // The descriptor is read through the staging seam, before a single byte is written: the
-            // exposure is the write window, not the commit.
             AtomicSave.SaveAsync(
                 target,
                 new byte[] { 1, 2, 3 },
@@ -535,7 +530,6 @@ internal static class Program
             {
                 guarded.SaveToAsync(target, fromDialog: true, new byte[] { 9, 9, 9, 9 }, "image/png", (stream, bytes) =>
                 {
-                    // Same name, different file: the confirmation named the one that was there.
                     File.Delete(target);
                     File.WriteAllBytes(target, new byte[] { 0xAA, 0xBB, 0xCC });
                     return stream.WriteAsync(bytes, 0, bytes.Length);
@@ -626,8 +620,6 @@ internal static class Program
             {
                 AtomicSave.SaveAsync(target, new byte[4096], AtomicSave.Observe(target), (stream, bytes) =>
                 {
-                    // The new file now exists and is short: exactly the state the old in-place write
-                    // left behind when it failed. The destination must not care.
                     stream.Write(bytes, 0, 4);
                     wrote = 4;
                     throw new IOException("simulated disk full");
@@ -821,7 +813,6 @@ internal static class Program
             Runner.Require(build.Contains("readSelfCheckReport", StringComparison.Ordinal),
                 "build.mjs does not call readSelfCheckReport");
 
-            // The gate's behaviour is exercised by desktop/test.mjs; these are its required rules.
             var gate = File.ReadAllText(Path.Combine(desktopDir, "selfcheck-report.mjs"));
             Runner.Require(gate.Contains("produced no report", StringComparison.Ordinal), "a missing report is not rejected");
             Runner.Require(gate.Contains("not valid JSON", StringComparison.Ordinal), "an unparsable report is not rejected");
@@ -855,9 +846,6 @@ internal static class Program
 
         runner.Check("the build never writes into the app lane's folder", () =>
         {
-            // app/ is owned by another lane, so every mention of appSrc in the build has to be a
-            // read. The list is closed on purpose: a new mention fails here until someone justifies
-            // it, which fails safe where a pattern that stopped matching would not.
             var allowed = new[]
             {
                 "const appSrc = join(repoRoot, 'app');",
@@ -877,8 +865,6 @@ internal static class Program
                     $"build.mjs uses appSrc where a read is not proven: {trimmed}");
             }
 
-            // The copy mirrors app/: a file that left the source tree must not survive in the bundle,
-            // so the destination is emptied before it is filled.
             var cleared = Array.FindIndex(lines, line => line.Contains("rmSync(appDest", StringComparison.Ordinal));
             var copied = Array.FindIndex(lines, line => line.Contains("cpSync(appSrc, appDest", StringComparison.Ordinal));
             Runner.Require(cleared >= 0, "build.mjs does not clear the bundled app folder before copying");
@@ -924,8 +910,6 @@ internal static class Program
 
         runner.Check("no shipped source, script or packaging file shows the pre-rename display name", () =>
         {
-            // The suite itself is excluded: this check holds the forbidden string. bin/obj/dist are
-            // build output, and a stale generated file is not a shipped surface.
             var offenders = new List<string>();
             var scanned = 0;
 
@@ -979,12 +963,10 @@ internal static class Program
             Runner.Require(iss.Contains("AppId={{B4F1C8A2-5E3D-4A97-9C21-7D6E5F4A3B18}", StringComparison.Ordinal),
                 "the AppId changed, so Windows would not treat an existing install as the same product");
 
-            // A section, not a mention: prose in a comment is fine, a real section deletes files.
             Runner.Require(!System.Text.RegularExpressions.Regex.IsMatch(
                     iss, @"^[ \t]*\[UninstallDelete\]", System.Text.RegularExpressions.RegexOptions.Multiline),
                 "the uninstaller deletes something outside its own install directory");
 
-            // Every delete entry names its target, and the profile folder must not be one of them.
             Runner.Require(!System.Text.RegularExpressions.Regex.IsMatch(
                     iss, @"^[ \t]*Name:[ \t]*""\{localappdata\}", System.Text.RegularExpressions.RegexOptions.Multiline | System.Text.RegularExpressions.RegexOptions.IgnoreCase),
                 "the uninstaller targets the WebView2 profile folder");
@@ -996,11 +978,6 @@ internal static class Program
 
         runner.Check("the README credits the one registry write the installer makes", () =>
         {
-            // The host process writes no registry value of its own. The installer does: Inno Setup's
-            // CreateUninstallRegKey and Uninstallable both default to yes, neither is turned off here,
-            // and the entry they create is the per-user key Apps & Features lists - which is what makes
-            // an upgrade replace the old entry instead of adding a second one. A README that promises
-            // "nothing is written to the registry" is therefore wrong for everyone who took the setup.
             var iss = File.ReadAllText(issPath);
             var registers = iss.Contains("AppId=", StringComparison.Ordinal) &&
                 !System.Text.RegularExpressions.Regex.IsMatch(
@@ -1037,7 +1014,6 @@ internal static class Program
 
         runner.Check("the notice gives each vendored library its real licence", () =>
         {
-            // app/vendor/NOTICE is the authority: CamanJS ships the 3-clause BSD text, glfx.js ships MIT.
             var lines = File.ReadAllText(Path.Combine(desktopDir, "NOTICE.md"))
                 .Split('\n')
                 .Select(line => line.Trim())
@@ -1054,8 +1030,6 @@ internal static class Program
 
         runner.Check("a save never writes the destination in place", () =>
         {
-            // Truncating the destination before the new bytes exist destroys the user's file when the
-            // write fails. The bridge must save through a temp file in the same directory and rename.
             var bridge = File.ReadAllText(Path.Combine(desktopDir, "MemeFryer.Desktop", "Bridge.cs"));
             Runner.Require(!System.Text.RegularExpressions.Regex.IsMatch(bridge, @"WriteAllBytes(Async)?\s*\("),
                 "Bridge.cs calls WriteAllBytes on the destination, so a failed write truncates it");
@@ -1068,8 +1042,6 @@ internal static class Program
             Runner.Require(bridge.Contains("_confirmReplace(", StringComparison.Ordinal),
                 "Bridge.cs does not confirm a replacement against the file it just read");
 
-            // The writer is only safe while it keeps these properties; name them so a rewrite that
-            // drops one goes red here rather than in a user's folder.
             var atomic = File.ReadAllText(Path.Combine(desktopDir, "MemeFryer.Desktop", "AtomicSave.cs"));
             Runner.Require(atomic.Contains("FileMode.CreateNew", StringComparison.Ordinal),
                 "the temporary file is not created exclusively, so the cleanup could delete someone else's file");
@@ -1109,8 +1081,6 @@ internal static class Program
     {
         runner.Check("the caption plan is right on every Windows build it can meet", () =>
         {
-            // Dark tells whether a dark caption is asked for; Colors whether a colour is asked for
-            // at all; Attribute 0 means the build has nothing to ask.
             var rows = new (Version Build, bool HighContrast, bool Dark, int Attribute, bool Colors, string Name)[]
             {
                 (new Version(10, 0, 26100, 0), false, true, 20, true, "Windows 11 24H2"),
@@ -1152,16 +1122,12 @@ internal static class Program
             Runner.Require(plan.SupportsCaptionColor,
                 "high contrast on Windows 11 would leave a caption coloured before it was switched on");
 
-            // Windows 10 has no such attribute: naming it there would be an invented call, not a clear.
             var legacy = WindowChrome.Decide(new Version(10, 0, 19045, 0), highContrast: true);
             Runner.Require(!legacy.SupportsCaptionColor, "Windows 10 claims a caption colour attribute it does not have");
         });
 
         runner.Check("the caption paints the app's own header and text colours", () =>
         {
-            // The page's top bar is --panel and sits directly under the caption; --text is the colour
-            // of every label on it. If the app's palette moves, this goes red here instead of shipping
-            // a title bar that no longer joins the page.
             var css = File.ReadAllText(Path.Combine(RepoPath("app"), "styles.css"));
 
             var panel = CssColor(css, "--panel");
@@ -1175,8 +1141,6 @@ internal static class Program
 
         runner.Check("a caption colour reaches the window as Windows' COLORREF", () =>
         {
-            // COLORREF is 0x00BBGGRR, so #0E131A is 0x001A130E. Handing Windows the RGB value is the
-            // classic way to paint a caption a colour nobody designed.
             Runner.Require(ColorTranslator.ToWin32(WindowChrome.CaptionColor) == 0x001A130E,
                 $"the caption COLORREF is 0x{ColorTranslator.ToWin32(WindowChrome.CaptionColor):X8}, expected 0x001A130E");
             Runner.Require(ColorTranslator.ToWin32(WindowChrome.CaptionTextColor) == 0x00F7EEE7,
@@ -1185,8 +1149,6 @@ internal static class Program
 
         runner.Check("a window with no handle is reported, never thrown at", () =>
         {
-            // Called from a handle-created path, so a throw here would take the app down instead of
-            // leaving one light caption on a dark app.
             var result = WindowChrome.Apply(IntPtr.Zero);
 
             Runner.Require(!result.DarkModeAccepted && !result.CaptionAccepted, "an absent window was reported as themed");
@@ -1207,8 +1169,6 @@ internal static class Program
 
         runner.Check("a legacy build is set and read back through the attribute it set", () =>
         {
-            // Windows 10 1809-1909 honour attribute 19. Asking them for 20 afterwards answers for an
-            // attribute this build never set, so the evidence would be about the wrong number.
             var plan = WindowChrome.Decide(new Version(10, 0, 18363, 0), highContrast: false);
             var dwm = new FakeDwm();
             var result = WindowChrome.Apply(new IntPtr(1), plan, dwm);
@@ -1234,8 +1194,6 @@ internal static class Program
 
         runner.Check("a refused caption colour hands both colours back to the system", () =>
         {
-            // A caption fill that lands without its text colour, or the reverse, is a title nobody can
-            // read. The pair is committed together or handed back together.
             foreach (var refused in new[] { 35, 36 })
             {
                 var plan = WindowChrome.Decide(new Version(10, 0, 26100, 0), highContrast: false);
@@ -1272,7 +1230,6 @@ internal static class Program
 
         runner.Check("an unreachable dwmapi is reported, never thrown at", () =>
         {
-            // Both ways windows-inbox DLLs go missing by name, from every call the caption makes.
             foreach (var missing in new[] { typeof(DllNotFoundException), typeof(EntryPointNotFoundException) })
             {
                 var plan = WindowChrome.Decide(new Version(10, 0, 26100, 0), highContrast: false);
@@ -1303,7 +1260,6 @@ internal static class Program
 
         runner.Check("an absent window cannot pass the native-caption check", () =>
         {
-            // The gate the self-check reads has to be able to go red, or it proves nothing.
             Runner.Require(WindowChrome.MissingCaptionStyles(IntPtr.Zero).Count > 0,
                 "an absent window reported a complete native caption");
         });
@@ -1319,9 +1275,6 @@ internal static class Program
 
             Runner.Require(sources.Count > 0, "no host source was scanned, so the check proves nothing");
 
-            // A custom title bar is not a style choice: it takes away the drag region, Snap Layouts,
-            // the system menu, keyboard access and Windows' own automation for the caption, and no
-            // off-screen check here can see whether the replacement actually works.
             foreach (var file in sources)
             {
                 var text = File.ReadAllText(file);
@@ -1601,8 +1554,6 @@ internal static class Program
             Runner.Require(recorded.ContainsKey("svg") && recorded.ContainsKey("ico"),
                 "icon.lock does not record both the svg and the ico");
 
-            // A digest of each file against the recorded one: neither may move alone, and neither
-            // needs Python, Pillow or numpy to be checked.
             foreach (var (key, path) in new[] { ("svg", svg), ("ico", iconPath) })
             {
                 var actual = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(File.ReadAllBytes(path)));
@@ -1614,7 +1565,6 @@ internal static class Program
         var python = ResolvePython();
         if (python is null || !PythonHasPillow(python, assetDir))
         {
-            // The digest check above still guards the pair; this deeper one only re-renders.
             runner.Skip("a fresh render of the vector still produces the committed .ico",
                 python is null ? "no python on PATH" : "python has no Pillow or numpy");
         }
@@ -1755,8 +1705,6 @@ internal static class Program
             return;
         }
 
-        // None of these reach MainForm: argument validation and app resolution run first, so no window
-        // and no WebView2 is created.
         runner.Check("--help exits 0 without a window", () =>
         {
             var (code, _) = RunExe(exe, new[] { "--help" }, tempRoot, new Dictionary<string, string?>());
@@ -1842,7 +1790,6 @@ internal static class Program
             directory = directory.Parent;
         }
 
-        // Fall back to the compiled-in source location.
         return Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", folder));
     }
 

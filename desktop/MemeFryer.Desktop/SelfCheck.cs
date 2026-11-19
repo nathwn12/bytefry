@@ -35,7 +35,6 @@ internal static class SelfCheck
 
         try
         {
-            // The window exists (WebView2 needs a real HWND) but must not be on any monitor.
             var bounds = host.Bounds;
             var onScreen = Screen.AllScreens.Any(screen => screen.Bounds.IntersectsWith(bounds));
 
@@ -44,16 +43,12 @@ internal static class SelfCheck
             Add(checks, "self-check window stays out of the taskbar", !host.ShowInTaskbar,
                 host.ShowInTaskbar ? "shown in taskbar" : "out of taskbar");
 
-            // The caption is Windows' own, and these style bits are what make it Windows': the drag
-            // region, the system menu, the buttons and the resize border. A custom title bar is
-            // exactly what would drop them, so their absence is a failure, not a style choice.
             var absent = WindowChrome.MissingCaptionStyles(host.Handle);
             Add(checks, "the window keeps its native caption, system menu and system buttons",
                 absent.Count == 0,
                 absent.Count == 0 ? "caption, system menu, minimise, maximise and resize border present"
                                   : "missing: " + string.Join(", ", absent));
 
-            // Read the decision the shipping path made at handle creation, not a fresh one.
             chrome = host.Chrome;
             Add(checks, "the caption colours were asked for through DWM", chrome is not null,
                 chrome?.Plan.Reason ?? "no decision was recorded: the window was never themed");
@@ -68,17 +63,12 @@ internal static class SelfCheck
                 }
                 else
                 {
-                    // A build too old for the attribute, or high contrast: leaving the caption alone is
-                    // the intended result there, and the reason says which.
                     Add(checks, "the title bar was left to the system theme", true, chrome.Plan.Reason);
                 }
 
                 if (chrome.Plan.SupportsCaptionColor)
                     Add(checks, "DWM accepted the caption colors", chrome.CaptionAccepted, chrome.Detail);
 
-                // Windows gives every new HWND the default caption, and the form asks again on each
-                // HandleCreated. Making the same call twice is therefore the shipping behaviour; it
-                // must be safe and must leave the caption where the first call put it.
                 var again = WindowChrome.Apply(host.Handle);
                 Add(checks, "the caption can be applied again without changing it",
                     again.Plan == chrome.Plan && (!again.Plan.DarkTitleBar || again.DarkModeObserved != 0),
@@ -127,7 +117,6 @@ internal static class SelfCheck
                 Add(checks, "hostInfo round trip", false, Str(p, "hostInfoError") ?? "(no reply)");
             }
 
-            // A name that cannot already exist: the check never deletes or overwrites anything of the user's.
             var directory = Path.GetDirectoryName(Path.GetFullPath(reportPath)) ?? Path.GetTempPath();
             var targetPath = Path.Combine(directory, $"selfcheck-write-{Guid.NewGuid():N}.png");
 
@@ -209,7 +198,6 @@ internal static class SelfCheck
         }
         catch (Exception ex)
         {
-            // A report that cannot be written must not mask the original failure.
             try { Console.Error.WriteLine($"[meme-fryer] could not write the failure report: {ex.Message}"); }
             catch (IOException) { /* no console attached */ }
         }

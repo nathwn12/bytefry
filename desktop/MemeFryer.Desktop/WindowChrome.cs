@@ -67,9 +67,6 @@ internal static class WindowChrome
 
         if (highContrast)
         {
-            // Nothing is coloured: a caption we picked cannot know the user's contrast palette. On
-            // Windows 11 the colour attributes are still named, with the default, so a caption
-            // coloured before high contrast was switched on is handed back rather than left behind.
             return new ChromePlan(attribute, false, build >= FirstCaptionColorBuild, null, null,
                 "high contrast is on: the system palette owns the caption");
         }
@@ -116,8 +113,6 @@ internal static class WindowChrome
             var fill = Set(dwm, window, CaptionColorAttribute, ColorValue(plan.CaptionColor), "caption color", notes);
             var text = Set(dwm, window, CaptionTextColorAttribute, ColorValue(plan.CaptionTextColor), "caption text color", notes);
 
-            // The pair is committed together or not at all: a fill the app chose under text Windows
-            // chose, or the reverse, is a title nobody can read. One refused call hands both back.
             captionAccepted = fill && text;
             if (!captionAccepted)
             {
@@ -127,10 +122,6 @@ internal static class WindowChrome
             }
         }
 
-        // The dark-mode attribute is the one DWM will also answer for, so the readback is published
-        // as evidence; a colour can only be set, never queried, so its calls' results are the proof.
-        // It names the attribute this build was actually given - 19 on 1809-1909, 20 from 2004 - or
-        // the answer would be about a number that was never set here.
         var observed = plan.Supported ? ReadBack(dwm, window, plan.DarkModeAttribute, notes) : null;
 
         return new ChromeResult(plan, darkAccepted, captionAccepted, observed, string.Join("; ", notes));
@@ -189,8 +180,6 @@ internal static class WindowChrome
         }
         catch (Exception ex) when (IsMissingDwm(ex))
         {
-            // dwmapi.dll ships with every supported Windows; if it cannot be reached, the caption keeps
-            // the colours Windows gave it and the app still starts.
             Trace.WriteLine($"[meme-fryer] title bar: {what} unavailable: {ex.Message}");
             notes.Add($"{what} unavailable ({ex.GetType().Name})");
             return false;

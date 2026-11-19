@@ -24,7 +24,6 @@
 (function () {
     'use strict';
 
-    /* Constants carried over from the original implementation. */
     var MAX_CANVAS_WIDTH = 800;      // canvas.width = Math.min(800, img.width)
     var NUB_CENTRE_OFFSET = 4;       // bulgePinch(nub.x - 4, nub.y - 4, ...)
     var DEFAULT_SAVE_QUALITY = 0.8;  // downloadCanvasB64 default
@@ -73,7 +72,6 @@
     var allRangeInputs = Array.prototype.slice.call(
         document.querySelectorAll('input[type="range"]'));
 
-    /* Filter name -> raw slider value, the original's `b`. */
     var values = {};
 
     var state = {
@@ -94,9 +92,6 @@
     };
 
 
-    /* The status line is a live region. Only phase changes reach it: writing the
-     * same text again is skipped, and the per-pass counter lives in a separate,
-     * aria-hidden node so a screen reader hears "Recompressing", not 28 steps. */
     function setStatus(text, kind) {
         if (el.status.textContent !== text) {
             el.status.textContent = text;
@@ -122,9 +117,6 @@
         return err.message || String(err);
     }
 
-    /* The canvas is only exportable when it holds a completed render: never a
-     * drag preview, never mid-render, and never while a newly accepted file is
-     * still being decoded over it. */
     function canvasIsFinal() {
         return state.loaded && state.hasRendered && !state.loading &&
             !state.rendering && !state.previewing;
@@ -203,11 +195,6 @@
         el.copyBtn.hidden = !hostBridge();
     }
 
-    /* ------------------------------------------------------------------ bulge
-     * One glfx canvas is kept for the life of the page. The original created a
-     * new WebGL canvas on every call, which exhausts the browser's WebGL
-     * context budget after a few dozen renders; the pinching itself is
-     * unchanged. */
 
     var fxCanvas = null;
     var fxBroken = false;
@@ -244,10 +231,6 @@
         if (!canvasFx) return;
 
         var strength = parseFloat(el.strength.value);
-        /* Canvas pixels, like nub.x and nub.y: glfx pinches the canvas as a
-         * texture at its intrinsic size, so a radius measured from the displayed
-         * size pinches a different share of the picture whenever the window or
-         * the stage changes - same image, same point, different result. */
         var radius = parseFloat(el.radius.value) *
             (el.canvas.width + el.canvas.height) / 2;
 
@@ -275,14 +258,7 @@
         }
     }
 
-    /* Draws the untouched source plus the current bulges, the same preview the
-     * original painted while a nub was dragged. It never writes while a render
-     * is running: the pipeline re-encodes from the canvas, so a preview drawn
-     * into it would be baked into the result. */
     function previewBulge() {
-        /* A preview is only worth painting when there is a source behind it: a
-         * canvas left over from a load that failed after touching it has none,
-         * and painting there would strand the export lock on a preview. */
         if (!state.loaded || !state.sourceUrl) return;
 
         if (state.rendering) {
@@ -324,7 +300,6 @@
                 'Bulge point ' + (index + 1) + ' of ' + total +
                 '. Drag to move, arrow keys to nudge, Delete to remove.');
         });
-        /* An empty group is not worth announcing. */
         if (total === 0) el.nubs.setAttribute('aria-hidden', 'true');
         else el.nubs.removeAttribute('aria-hidden');
     }
@@ -348,8 +323,6 @@
         node.addEventListener('pointerdown', function (event) {
             if (event.button !== 0) return;
             event.preventDefault();
-            /* A synthetic or already-released pointer id throws; the drag still
-             * tracks through the node's own events. */
             try { node.setPointerCapture(event.pointerId); } catch (ignored) { /* no capture */ }
             drag = { id: event.pointerId, x: event.clientX, y: event.clientY, moved: false };
             node.focus();
@@ -429,9 +402,6 @@
 
         if (state.loaded) requestRender();
 
-        /* Removing a focused element moves focus somewhere deliberate: the next
-         * point, the tool that adds one, and only then the image itself. All
-         * three show a ring. */
         var next = state.nubs[index] || state.nubs[index - 1];
         if (next) next.el.focus();
         else if (!el.addNub.disabled) el.addNub.focus();
@@ -482,7 +452,6 @@
         await jpegize(job);
     }
 
-    /* Original jpegize(): decide whether this pass crushes, then run it. */
     async function jpegize(job) {
         job.check();
 
@@ -500,7 +469,6 @@
         await jpegizeInner(job);
     }
 
-    /* Original jpegize_inner(): redraw, then recompress the canvas `left` times. */
     async function jpegizeInner(job) {
         job.check();
 
@@ -526,8 +494,6 @@
         }
     }
 
-    /* Original apply_filters(): bulge over the crushed pixels, reload them into
-     * CamanJS, then apply every non-zero filter in slider order. */
     async function applyFilters(job) {
         setStatus('Applying filters');
         bulge();
@@ -550,9 +516,6 @@
     }
 
     function requestRender() {
-        /* Nothing to render without a source: a load that failed after touching
-         * the canvas leaves the previous source behind, and it no longer
-         * describes what is on it. */
         if (!state.loaded || !state.sourceUrl) return;
 
         if (state.rendering) {
@@ -578,9 +541,6 @@
                     return;
                 }
                 failed = true;
-                /* Whatever the failed run left on the canvas is not a finished
-                 * render: it is half-processed pixels. Exporting it would hand
-                 * the user a broken image with a "saved" message. */
                 state.hasRendered = false;
                 if (window.console) console.error(err);
                 setStatus('Processing failed: ' + messageOf(err), 'error');
@@ -600,8 +560,6 @@
                     if (!el.status.getAttribute('data-kind')) setStatus('Done');
                 }
 
-                /* A drag that arrived mid-render gets its preview now: the canvas
-                 * is free, and the gesture is still in progress. */
                 if (state.previewPending) {
                     state.previewPending = false;
                     previewBulge();
@@ -640,40 +598,22 @@
         });
     }
 
-    /* A file is accepted the moment it is handed over, and the export locks
-     * then, not when its decode happens to finish. Decoding is asynchronous
-     * while the canvas still holds the previous render, so anything that waits
-     * for processing to start leaves Save and Ctrl+S exporting the previous
-     * image — silently, and looking like the new one. */
     function beginLoad() {
         state.loadToken += 1;
         state.loading = true;
 
-        /* `hasRendered` is deliberately left alone. It is the statement about the
-         * pixels on the canvas, and those pixels have not changed: this file has
-         * not been decoded yet. If it fails, the finished render that is still on
-         * screen is exportable again with no bookkeeping; if it succeeds, adopting
-         * it clears the flag. `loading` below is what locks the export for the
-         * length of the decode. */
         syncExportState();
         setStatus('Loading image…');
 
         return state.loadToken;
     }
 
-    /* One door for every accepted source: a dropped file, a pasted one, or the
-     * host's Open dialog. */
     function loadSource(src, name) {
         var token = beginLoad();
 
         loadFromSrc(src, name, token).catch(function (err) {
-            /* A newer file took over while this one was decoding: it owns the
-             * canvas and the status line now. */
             if (token !== state.loadToken) return;
 
-            /* Nothing was drawn, so whatever `hasRendered` says about the canvas
-             * is still true — including "a render failed and left partial
-             * pixels", which keeps the export locked. */
             state.loading = false;
             syncExportState();
             setStatus('Could not load that image: ' + messageOf(err), 'error');
@@ -689,22 +629,12 @@
             image.onerror = function () { reject(new Error('that file is not an image this app can read')); };
             image.src = src;
         }).then(function (loaded) {
-            /* Another file was accepted after this one: it wins, whatever order
-             * the decodes finish in. */
             if (token !== state.loadToken) return;
 
             adoptImage(loaded, name);
         });
     }
 
-    /* Puts the decoded image on the canvas and starts the pipeline.
-     *
-     * The first line invalidates the export before anything is written to the
-     * canvas, because every line after it can fail: the resize, the draw, the
-     * pristine JPEG encode and CamanJS's construction. Once the canvas has been
-     * resized the previous render is gone, so a half-prepared canvas must never
-     * be exportable — and the token bump abandons any render still writing to the
-     * canvas that is being replaced. */
     function adoptImage(loaded, name) {
         state.hasRendered = false;
         state.token += 1;
@@ -724,15 +654,10 @@
             ctx.drawImage(loaded, 0, 0, el.canvas.width, el.canvas.height);
             state.sourceUrl = el.canvas.toDataURL('image/jpeg');
 
-            /* CamanJS renders once on construction; the pipeline starts from its
-             * callback so the two never write to the canvas at the same time. */
             state.cam = (typeof Caman === 'function')
                 ? Caman(el.canvas, function () { requestRender(); })
                 : null;
         } catch (err) {
-            /* The canvas now holds this file, and the one it replaced is gone.
-             * Neither the old source nor the old render describes it any more, so
-             * drop both and stay locked until a file really loads. */
             if (window.console) console.error(err);
             state.sourceUrl = null;
             state.cam = null;
@@ -786,8 +711,6 @@
         return parts.join(' · ');
     }
 
-    /* One object URL is kept at a time: the image on the canvas still refers to
-     * it, so the previous one is released only once a new file has replaced it. */
     var lastObjectUrl = null;
 
     function releaseObjectUrl() {
@@ -809,9 +732,6 @@
             return;
         }
 
-        /* Decode straight from the file. A FileReader would base64 the whole
-         * image first - tens of milliseconds and a string three times the size
-         * of the file - and then hand the decoder text to parse backwards. */
         var url = URL.createObjectURL(file);
         releaseObjectUrl();
         lastObjectUrl = url;
@@ -844,9 +764,6 @@
     function exportQuality() {
         if (!el.jpegAfter.checked) return DEFAULT_SAVE_QUALITY;
 
-        /* 0 is the slider's minimum and a real choice, so only a value that is
-         * not a number falls back: a truthiness test exports a user's lowest
-         * setting at 0.8 and says nothing about it. */
         var parsed = parseFloat(el.jpegQuality.value);
         return isFinite(parsed) ? parsed : DEFAULT_SAVE_QUALITY;
     }
@@ -935,8 +852,6 @@
 
     var dragDepth = 0;
 
-    /* A drag is a file drag when it carries files; anything else keeps the
-     * browser's own behaviour for text and links. */
     function dragHasFiles(event) {
         var types = event.dataTransfer && event.dataTransfer.types;
         return !!types && Array.prototype.indexOf.call(types, 'Files') >= 0;
@@ -978,13 +893,6 @@
         loadFile(event.dataTransfer.files[0]);
     }
 
-    /* The stage is the only place that loads a file, but the whole window has to
-     * claim a file drag. Outside the stage the browser's default for a dropped
-     * file is to navigate to it: in a plain browser that replaces the page and
-     * loses the render in progress, and in the host the navigation is cancelled
-     * and the file is swallowed with no feedback. So the window refuses the
-     * default wherever the file is let go, shows no drop cursor off the stage,
-     * and says where a file belongs instead of dropping it on the floor. */
     function onWindowDragEnter(event) {
         if (!dragHasFiles(event)) return;
         event.preventDefault();
@@ -993,14 +901,10 @@
     function onWindowDragOver(event) {
         if (!dragHasFiles(event)) return;
         event.preventDefault();
-        /* The stage has already claimed the drag as a copy; everywhere else the
-         * cursor has to say that this drop will not be taken. */
         if (!overStage(event)) event.dataTransfer.dropEffect = 'none';
     }
 
     function onWindowDragLeave(event) {
-        /* Only a drag that left the window clears the stage's affordance; a
-         * leave that passes between two elements of the page does not. */
         if (event.clientX > 0 && event.clientY > 0 &&
             event.clientX < window.innerWidth && event.clientY < window.innerHeight) return;
         clearDropTarget();
@@ -1011,12 +915,8 @@
         clearDropTarget();
         if (!dragHasFiles(event) && !(files && files.length)) return;
 
-        /* Refused whether or not the drop is ours: this is the line that stops
-         * the page being replaced by a file. */
         event.preventDefault();
 
-        /* A file dropped on the stage was loaded by the stage's own handler,
-         * which runs before this one. */
         if (overStage(event)) return;
 
         if (!state.rendering && !state.previewing) {
