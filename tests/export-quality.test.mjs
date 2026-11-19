@@ -138,7 +138,6 @@ export async function run({ browser, base, fixtures }) {
     await page.evaluate(RENDER_WATCH);
     await loadAndWait(page, small);
 
-    /* ---- the documented path: the slider is the save's quality ---- */
 
     const shipped = await saveThroughFallback(page, [0.175, 0.8]);
     checks.push({
@@ -155,7 +154,6 @@ export async function run({ browser, base, fixtures }) {
         detail: `saved ${shipped.payload.hash}, 0.8 would be ${shipped.references['0.8'].hash}`
     });
 
-    /* ---- the zero case ---- */
 
     await setControl(page, 'jpeg_quality', 0);
 
@@ -182,7 +180,6 @@ export async function run({ browser, base, fixtures }) {
         detail: `status "${zero.status}"`
     });
 
-    /* ---- the native route: the same payload reaches fryerHost.saveImage ---- */
 
     const native = await page.evaluateJson(`(async () => {
         window.__nativeCalls = [];
@@ -223,7 +220,6 @@ export async function run({ browser, base, fixtures }) {
         detail: JSON.stringify(nativePayload)
     });
 
-    /* ---- the documented default: after-filters off is 0.8, slider or not ---- */
 
     await page.evaluate(`(() => { delete window.fryerHost; return true; })()`);
     await afterRender(page, `(() => {

@@ -65,7 +65,6 @@ SIZES = (16, 24, 32, 48, 64, 128, 256)
 SUPERSAMPLE = {16: 12, 24: 10, 32: 8, 48: 6, 64: 6, 128: 4, 256: 4}
 
 
-# --------------------------------------------------------------------------- SVG subset
 
 
 TAG = lambda element: element.tag.rsplit("}", 1)[-1]  # noqa: E731 - short enough to read inline
@@ -318,7 +317,6 @@ class Art:
             element, paint, float(element.get("fill-opacity", 1)), inherited_min))
 
 
-# --------------------------------------------------------------------------- raster
 
 
 def fill_mask(subpaths, scale: float, width: int, height: int) -> np.ndarray:
@@ -410,7 +408,6 @@ def render(art: Art, size: int) -> Image.Image:
     return downscale(Image.fromarray(rgba.round().astype(np.uint8), "RGBA"), size)
 
 
-# --------------------------------------------------------------------------- Windows ICO
 
 
 def dib(image: Image.Image) -> bytes:
@@ -460,7 +457,6 @@ def build() -> dict[int, Image.Image]:
     return {size: render(art, size) for size in SIZES}
 
 
-# --------------------------------------------------------------------------- digest record
 
 
 LOCK_HEADER = (
@@ -495,7 +491,6 @@ def read_lock(path: Path) -> dict[str, str]:
     return recorded
 
 
-# --------------------------------------------------------------------------- preview
 
 
 GROUNDS = (

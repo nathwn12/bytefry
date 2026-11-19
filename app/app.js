@@ -32,7 +32,6 @@
 
     var ABORTED = { aborted: true };
 
-    /* ------------------------------------------------------------------ dom */
 
     function byId(id) {
         return document.getElementById(id);
@@ -94,7 +93,6 @@
         sourceName: ''
     };
 
-    /* ---------------------------------------------------------------- status */
 
     /* The status line is a live region. Only phase changes reach it: writing the
      * same text again is skipped, and the per-pass counter lives in a separate,
@@ -158,7 +156,6 @@
         return true;
     }
 
-    /* --------------------------------------------------------------- outputs */
 
     function syncOutput(input) {
         var out = document.querySelector('output[for="' + input.id + '"]');
@@ -195,7 +192,6 @@
         el.addNub.disabled = !bulgeOn;
     }
 
-    /* ------------------------------------------------------------ host bridge */
 
     function hostBridge() {
         var host = window.fryerHost;
@@ -305,7 +301,6 @@
         }
     }
 
-    /* ------------------------------------------------------------------- nubs */
 
     function clamp(value, low, high) {
         return value < low ? low : (value > high ? high : value);
@@ -458,7 +453,6 @@
         return createNub(x, y);
     }
 
-    /* --------------------------------------------------------------- pipeline */
 
     function loadInto(image, src) {
         return new Promise(function (resolve, reject) {
@@ -617,7 +611,6 @@
             });
     }
 
-    /* ------------------------------------------------------------ image input */
 
     function layout() {
         if (!state.loaded || el.frame.hidden) return;
@@ -847,7 +840,6 @@
         el.fileInput.click();
     }
 
-    /* ------------------------------------------------------------------ export */
 
     function exportQuality() {
         if (!el.jpegAfter.checked) return DEFAULT_SAVE_QUALITY;
@@ -924,7 +916,6 @@
             });
     }
 
-    /* ------------------------------------------------------------------ events */
 
     function onPaste(event) {
         var items = event.clipboardData && event.clipboardData.items;

@@ -387,7 +387,6 @@ function main() {
   // --release compiles the installer into the folder it hands over, so one folder is the release.
   const installerOut = options.release ? releaseDir : join(options.outRoot, 'installer');
 
-  // --- preconditions ---------------------------------------------------------
   if (!existsSync(project)) fail(`project file missing: ${project}`);
   if (!existsSync(iconFile)) fail(`icon missing: ${iconFile}`);
   if (!existsSync(noticeFile)) fail(`licence notice missing: ${noticeFile}`);
@@ -426,7 +425,6 @@ function main() {
     console.warn('app/index.html missing: publishing the host shell without an app bundle.');
   }
 
-  // --- publish ---------------------------------------------------------------
   rmSync(stage, { recursive: true, force: true });
 
   const publishArgs = [
@@ -457,7 +455,6 @@ function main() {
   );
   run('dotnet', publishArgs, 'dotnet publish');
 
-  // --- bundle app/ -----------------------------------------------------------
   if (appReady) {
     step('bundling app/ -> app/');
     const appDest = join(stage, 'app');
@@ -469,14 +466,12 @@ function main() {
     }
   }
 
-  // --- bundle the host's licence notice --------------------------------------
   // The GPL text and the vendored-library notices arrive with app/. The host's own notice — its
   // licence and the components compiled into the exe — has to travel with the bundle too, or a
   // distributable ships a binary whose dependencies are never named.
   step('bundling NOTICE.md -> NOTICE.md');
   copyFileSync(noticeFile, join(stage, 'NOTICE.md'));
 
-  // --- build info ------------------------------------------------------------
   let appStats = { files: 0, bytes: 0 };
   if (existsSync(join(stage, 'app'))) appStats = directoryBytes(join(stage, 'app'));
 
@@ -502,7 +497,6 @@ function main() {
   ].join('\n');
   writeFileSync(join(stage, 'BUILD-INFO.txt'), `${info}\n`, { encoding: 'utf8' });
 
-  // --- promote to dist -------------------------------------------------------
   step(`publishing to ${portable}`);
   rmSync(portable, { recursive: true, force: true });
   mkdirSync(options.outRoot, { recursive: true });
@@ -526,7 +520,6 @@ function main() {
   }
   note(`PE machine: 0x${machine.toString(16).toUpperCase().padStart(4, '0')} (${options.runtime})`);
 
-  // --- installer -------------------------------------------------------------
   let setupAsset = null;
   if (options.installer || options.release) {
     const iscc = findIscc();
@@ -565,7 +558,6 @@ function main() {
     if (!options.release) note(`${setup.name} (${(statSync(setupAsset).size / 1024 / 1024).toFixed(1)} MB)`);
   }
 
-  // --- release assets --------------------------------------------------------
   //
   // One command, three files, each checked by what it actually contains: the installer, a portable
   // zip whose entries sit at the archive root, and a source zip of the exact commit built here.
@@ -593,7 +585,6 @@ function main() {
   console.log('');
   console.log(`build ok: ${portable}`);
 
-  // --- off-screen self-check -------------------------------------------------
   //
   // The host needs a real window for WebView2 to compose, so this check parks one outside every
   // monitor and never activates it: nothing is visible and no focus is taken, but it is off-screen,

@@ -87,7 +87,6 @@ export async function run({ browser, base, fixtures }) {
     const goodDigest = await page.evaluate('window.__t.digest()');
     const goodMeta = await page.evaluate('document.getElementById("image-meta").textContent');
 
-    /* ---- the race: a replacement is accepted, the decode is still running ---- */
 
     await page.evaluate('window.__t.armEncodes()');
     const immediately = await page.evaluateJson(`(() => {
@@ -132,7 +131,6 @@ export async function run({ browser, base, fixtures }) {
         detail: `meta "${replacementMeta}"`
     });
 
-    /* ---- a file that cannot be decoded must not cost the previous image ---- */
 
     await page.evaluate('window.__t.armEncodes()');
     const brokenImmediately = await page.evaluateJson(`(() => {
@@ -174,7 +172,6 @@ export async function run({ browser, base, fixtures }) {
         detail: `${replacement} / ${afterRecovery}`
     });
 
-    /* ---- a file refused outright must not disturb what is on screen ---- */
 
     const refused = await page.evaluateJson(`(() => {
         const file = new File([new TextEncoder().encode('plain text')], 'notes.txt', { type: 'text/plain' });
@@ -196,7 +193,6 @@ export async function run({ browser, base, fixtures }) {
         detail: `save ${refused.save}, status "${refused.status}", sameDigest ${afterRefused.digest === replacement}`
     });
 
-    /* ---- a first load that fails leaves nothing exportable ---- */
 
     const emptyPage = await openInApp(browser, base);
     const firstFailure = await emptyPage.evaluateJson(`(() => {
@@ -213,7 +209,6 @@ export async function run({ browser, base, fixtures }) {
     });
     await emptyPage.close();
 
-    /* ---- two drops in quick succession: the second one wins ---- */
 
     const smallClean = await cleanLoad(browser, base, small);
     for (let attempt = 1; attempt <= 2; attempt++) {

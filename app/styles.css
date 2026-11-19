@@ -77,7 +77,6 @@ code {
     color: var(--violet);
 }
 
-/* ---------------------------------------------------------------- top bar */
 
 .topbar {
     display: flex;
@@ -110,7 +109,6 @@ code {
     gap: 8px;
 }
 
-/* ----------------------------------------------------------------- buttons */
 
 .btn {
     appearance: none;
@@ -177,7 +175,6 @@ code {
     text-align: center;
 }
 
-/* --------------------------------------------------------------- workspace */
 
 .workspace {
     display: grid;
@@ -368,7 +365,6 @@ code {
     }
 }
 
-/* ---------------------------------------------------------------- sidebar */
 
 .sidebar {
     min-height: 0;
@@ -430,7 +426,6 @@ code {
     font-variant-numeric: tabular-nums;
 }
 
-/* ----------------------------------------------------------------- ranges */
 
 input[type="range"] {
     appearance: none;
@@ -501,7 +496,6 @@ input[type="range"]::-moz-range-thumb {
     background: var(--violet);
 }
 
-/* ------------------------------------------------------------------ chips */
 
 .chip-row {
     display: flex;
@@ -571,7 +565,6 @@ input[type="range"]::-moz-range-thumb {
     color: var(--text-faint);
 }
 
-/* --------------------------------------------------------------- statusbar */
 
 .statusbar {
     display: flex;
@@ -618,7 +611,6 @@ input[type="range"]::-moz-range-thumb {
     white-space: nowrap;
 }
 
-/* ------------------------------------------------------------------ about */
 
 dialog#about {
     max-width: 620px;
@@ -668,7 +660,6 @@ dialog#about a:hover {
     margin-top: 18px;
 }
 
-/* ------------------------------------------------------------- narrower end */
 
 @media (max-width: 1000px) {
     :root {

@@ -68,7 +68,6 @@ export async function run({ browser, base, fixtures }) {
     const smallBase64 = base64(small.path);
     const photoBase64 = base64(photo.path);
     const brokenBase64 = Buffer.from('this is not an image, whatever its name says').toString('base64');
-    /* ---- 1. a render that throws ---- */
 
     const page = await openInApp(browser, base);
     await loadAndWait(page, small);
@@ -133,7 +132,6 @@ export async function run({ browser, base, fixtures }) {
         detail: 'a changed contrast must not hash as the old image'
     });
 
-    /* ---- 2. a failed replacement while another replacement is decoding ---- */
 
     const target = await openInApp(browser, base);
     await loadAndWait(target, small);
@@ -185,7 +183,6 @@ export async function run({ browser, base, fixtures }) {
         detail: await target.evaluate('document.getElementById("image-meta").textContent')
     });
 
-    /* ---- 3. a recovered load must not leave a standing licence to unlock ---- */
 
     /* The sequence a reviewer named: a failed replacement restores export, then a
      * render fails and leaves half-processed pixels on the canvas, then another
@@ -265,7 +262,6 @@ export async function run({ browser, base, fixtures }) {
     });
     await stale.close();
 
-    /* ---- 4. an adoption that fails after the canvas has been resized ---- */
 
     /* Adopting a decoded image resizes and redraws the canvas. The pristine JPEG
      * encode and CamanJS's construction both run after that, and either can throw.

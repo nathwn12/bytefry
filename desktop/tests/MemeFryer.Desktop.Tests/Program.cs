@@ -62,7 +62,6 @@ internal static class Program
         return runner.Failures.Count == 0 ? 0 : 1;
     }
 
-    // ---------------------------------------------------------------- app folder
 
     private static void AppPathChecks(Runner runner, string tempRoot)
     {
@@ -170,7 +169,6 @@ internal static class Program
         }
     }
 
-    // -------------------------------------------------------------------- bridge
 
     private static void BridgeChecks(Runner runner, string tempRoot)
     {
@@ -281,7 +279,6 @@ internal static class Program
             Runner.RequireEqual(41.5, reply.GetProperty("id").GetDouble(), "id");
         });
 
-        // ------------------------------------------------------- safe save (atomic)
 
         runner.Check("a destination that appears during the save is never replaced", () =>
         {
@@ -414,7 +411,6 @@ internal static class Program
                 "temporary files left behind");
         });
 
-        // ------------------------------------------------- staging ACL and confirmation
 
         runner.Check("the staged file is readable only by the current user and SYSTEM", () =>
         {
@@ -712,7 +708,6 @@ internal static class Program
         });
     }
 
-    // ------------------------------------------------------------------- reports
 
     private static void ReportChecks(Runner runner, string tempRoot)
     {
@@ -740,7 +735,6 @@ internal static class Program
         });
     }
 
-    // -------------------------------------------------------------------- script
 
     private static void ScriptChecks(Runner runner, string tempRoot)
     {
@@ -778,7 +772,6 @@ internal static class Program
         });
     }
 
-    // ----------------------------------------------------------------- packaging
 
     private static void PackagingChecks(Runner runner)
     {
@@ -893,7 +886,6 @@ internal static class Program
                 "build.mjs copies app/ before clearing the destination, so a stale file survives");
         });
 
-        // ------------------------------------------------ Bytefry product identity
 
         runner.Check("the executable, the window title and the installer all say Bytefry", () =>
         {
@@ -1107,7 +1099,6 @@ internal static class Program
         });
     }
 
-    // --------------------------------------------------------------------- icon
 
     /// <summary>
     /// The window's caption is Windows' own: the host asks DWM for colours and draws nothing. These
@@ -1213,7 +1204,6 @@ internal static class Program
             Runner.Require(dwm.Calls.Count == 0, $"an absent window still produced calls: {string.Join(", ", dwm.Calls)}");
         });
 
-        // ---------------------------------------------------------------- the effects
 
         runner.Check("a legacy build is set and read back through the attribute it set", () =>
         {
@@ -1753,7 +1743,6 @@ internal static class Program
 
     private static readonly int[] IconSizes = [16, 24, 32, 48, 64, 128, 256];
 
-    // ---------------------------------------------------------------- command line
 
     private static void CommandLineChecks(Runner runner, string tempRoot)
     {
