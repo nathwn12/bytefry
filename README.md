@@ -33,7 +33,7 @@ Take the installer or the portable build from [releases](https://github.com/nath
 - The portable build is `Bytefry.exe` with its `app\` folder beside it; keep the two together.
 - Or build it from source, which needs the .NET SDK 10 — see [Development](#development).
 
-## Use
+## Use it
 
 1. Open an image: `Ctrl+O`, paste one with `Ctrl+V`, or drop a file on the stage.
 2. Set the filters. Brightness, contrast, sharpen, saturation and noise re-render on release.
@@ -91,11 +91,11 @@ node third_party/glfx/verify.mjs      # the same for glfx.js
 
 - [Issues](https://github.com/nathwn12/bytefry/issues)
 - [Releases](https://github.com/nathwn12/bytefry/releases)
-- [`app/README.md`](app/README.md) — the web layer: pipeline order, keys, offline rules
-- [`desktop/README.md`](desktop/README.md) — the host: bridge contract, policy, packaging, the save's limits
-- [`CHANGELOG.md`](CHANGELOG.md) — what changed in each version
-- Upstream: [Meme Deep Fryer](https://deepfriedmemes.com) by Dima and contributors
-- Upstream source: [GitHub](https://github.com/efskap/deepfriedmemes.com)
+- [`app/README.md`](app/README.md)
+- [`desktop/README.md`](desktop/README.md)
+- [`CHANGELOG.md`](CHANGELOG.md)
+- [Meme Deep Fryer](https://deepfriedmemes.com)
+- [GitHub](https://github.com/efskap/deepfriedmemes.com)
 - [GPL-3.0-only](LICENSE)
 
-Built by nathwn12
+<p align="center"><sub>Built by nathwn12</sub></p>
