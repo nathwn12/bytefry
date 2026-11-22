@@ -1,0 +1,13 @@
+---
+project: bytefry
+one_line: Deep-fry images locally on Windows with repeat JPEG crush, a bulge and five filters.
+stack: [C#]
+status: draft
+since: 2026-11
+capabilities: []
+limits: []
+updated: 2026-11-22
+draft: true
+---
+
+Bytefry is a desktop build of Meme Deep Fryer: the original image pipeline, running offline in a WinForms window around Microsoft Edge WebView2. Nothing leaves the machine - the page declares connect-src 'none', and the host cancels every navigation, new window and permission request.
