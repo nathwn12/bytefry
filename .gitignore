@@ -22,5 +22,3 @@ __pycache__/
 Thumbs.db
 desktop.ini
 .DS_Store
-.seed/
-.opencode/skills/*-seed/
