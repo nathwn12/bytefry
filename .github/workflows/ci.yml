@@ -26,6 +26,8 @@ name: ci
 on:
   push:
     branches: [main]
+    # Path scope is a fact computed from the diff; an author's skip claim is not a trigger - only the fact is allowed.
+    paths-ignore: ['**/*.md', 'docs/**', 'LICEN[CS]E']
   pull_request:
   workflow_dispatch:
 
@@ -38,29 +40,27 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
-        with:
-          # Full history: the scope step below diffs against the base branch with
-          # `...`, which needs a merge base (and, on a push, the `before` commit).
-          fetch-depth: 0
 
       - name: Detect a docs-only change
         id: scope
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.number }}
         run: |
-          docs='^(.*\.md|docs/.*|LICEN[CS]E(\.md)?)$'
+          set -euo pipefail
+          docs='^(.+\.md|docs/.+|LICEN[CS]E)$'
+          code=true
           if [ "${{ github.event_name }}" = "pull_request" ]; then
-            git fetch --no-tags origin "${{ github.base_ref }}"
-            changed=$(git diff --name-only "origin/${{ github.base_ref }}...HEAD")
-          elif [ "${{ github.event_name }}" = "push" ] && [ -n "${{ github.event.before }}" ]; then
-            changed=$(git diff --name-only "${{ github.event.before }}" HEAD || true)
-          else
-            changed=$(git ls-files)
+            # One API read is the diff itself: no merge base to fetch, no full history to carry.
+            files=$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR}/files" --paginate --jq '.[].filename')
+            n=$(printf '%s\n' "$files" | grep -c . || true)
+            if [ "$n" -gt 0 ] && ! printf '%s\n' "$files" | grep -qvE "$docs"; then
+              code=false
+              echo "no code changed: docs only ($n files)"
+            fi
           fi
-          if [ -n "$changed" ] && ! printf '%s\n' "$changed" | grep -qvE "$docs"; then
-            echo "code=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "code=true" >> "$GITHUB_OUTPUT"
-          fi
+          echo "code=$code" >> "$GITHUB_OUTPUT"
 
       - uses: actions/setup-dotnet@v6
         if: steps.scope.outputs.code == 'true'

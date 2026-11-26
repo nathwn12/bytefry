@@ -45,7 +45,7 @@ Save and Copy refuse while a render is running or a point is being dragged, so a
 
 ## Configure it
 
-All settings are sliders in the window; there is no config file. Defaults below come from the shipped markup:
+Settings live in the window as sliders and checkboxes; there is no config file. Defaults below come from the shipped markup:
 
 | Setting | Default | Range |
 | --- | --- | --- |
@@ -76,7 +76,7 @@ Working width is capped at 800 px. Export is JPEG at quality 0.8 unless the "aft
 node desktop/build.mjs                # desktop/dist/portable/Bytefry.exe with app/ beside it
 node desktop/build.mjs --installer    # plus desktop/dist/installer/Bytefry-<version>-setup.exe
 node desktop/build.mjs --verify       # the same build plus the off-screen self-check
-node tests/run.mjs                    # web-layer suite in headless Chrome, no window
+node tests/run.mjs                    # headless Chromium-family suite (Chrome or Edge), no window
 node third_party/camanjs/verify.mjs   # the shipped CamanJS bytes are the pinned upstream artifact
 node third_party/glfx/verify.mjs      # the same for glfx.js
 ```
