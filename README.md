@@ -45,7 +45,7 @@ Save and Copy refuse while a render is running or a point is being dragged, so a
 
 ## Configure it
 
-All settings are sliders in the window; there is no config file. Defaults below come from the shipped markup:
+Settings live in the window as sliders and checkboxes; there is no config file. Defaults below come from the shipped markup:
 
 | Setting | Default | Range |
 | --- | --- | --- |
