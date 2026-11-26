@@ -12,6 +12,8 @@ import { mkdtempSync, readFileSync, rmSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
+const LAUNCH_TIMEOUT_MS = 45_000;
+
 const CANDIDATE_BROWSERS = [
     process.env.FRYER_CHROME,
     'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
@@ -90,20 +92,30 @@ export async function launch({ headless = true, width = 1280, height = 900 } = {
     const child = spawn(findBrowser(), args, { stdio: 'ignore' });
     const portFile = join(profileDir, 'DevToolsActivePort');
 
-    const deadline = Date.now() + 20000;
+    const deadline = Date.now() + LAUNCH_TIMEOUT_MS;
     let port = 0;
     while (Date.now() < deadline) {
         if (existsSync(portFile)) {
-            const [line] = readFileSync(portFile, 'utf8').split('\n');
-            port = Number(line);
-            if (port) break;
+            /* Chrome writes this file while it is still open for writing. On
+             * Windows the read can raise EBUSY or EPERM, and an early read can
+             * see only the port line. Both mean "not ready", not "failed". */
+            try {
+                const [line, path] = readFileSync(portFile, 'utf8').split('\n');
+                const candidate = Number(line);
+                if (candidate && path && path.trim()) {
+                    port = candidate;
+                    break;
+                }
+            } catch (error) {
+                if (!['EBUSY', 'EPERM', 'ENOENT'].includes(error.code)) throw error;
+            }
         }
         await new Promise(resolve => setTimeout(resolve, 25));
     }
     if (!port) {
         child.kill();
         rmSync(profileDir, { recursive: true, force: true });
-        throw new Error('the browser did not open a devtools port in 20s');
+        throw new Error(`the browser did not open a devtools port in ${LAUNCH_TIMEOUT_MS / 1000}s`);
     }
 
     // The port file's second line is the browser endpoint path.
