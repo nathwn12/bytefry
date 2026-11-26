@@ -76,7 +76,7 @@ Working width is capped at 800 px. Export is JPEG at quality 0.8 unless the "aft
 node desktop/build.mjs                # desktop/dist/portable/Bytefry.exe with app/ beside it
 node desktop/build.mjs --installer    # plus desktop/dist/installer/Bytefry-<version>-setup.exe
 node desktop/build.mjs --verify       # the same build plus the off-screen self-check
-node tests/run.mjs                    # web-layer suite in headless Chrome, no window
+node tests/run.mjs                    # headless Chromium-family suite (Chrome or Edge), no window
 node third_party/camanjs/verify.mjs   # the shipped CamanJS bytes are the pinned upstream artifact
 node third_party/glfx/verify.mjs      # the same for glfx.js
 ```
