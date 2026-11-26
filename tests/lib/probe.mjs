@@ -81,10 +81,13 @@ export const PROBE = `(() => {
        * recorded quality from one the encoder actually honoured. */
       row = [type || 'image/png', quality === undefined ? null : quality, 0];
       encodes.push(row);
-      if (failNextEncode) {
-        failNextEncode = false;
-        throw new Error('the encoder failed');
-      }
+    }
+    /* Injection is not limited to the displayed canvas: the app also
+     * serializes the pristine source on an offscreen copy, and a failure
+     * there has to be reported as an adoption failure. */
+    if (failNextEncode) {
+      failNextEncode = false;
+      throw new Error('the encoder failed');
     }
     const url = realToDataURL.apply(this, arguments);
     if (row) row[2] = url.length;
