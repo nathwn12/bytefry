@@ -31,12 +31,22 @@ if (!selected.length) {
     process.exit(2);
 }
 
-const harness = await createHarness();
 let passed = 0;
 let failed = 0;
 const failures = [];
 
-for (const test of selected) {
+let harness;
+try {
+    harness = await createHarness();
+} catch (error) {
+    failed += 1;
+    const stack = String(error.stack || error).split('\n');
+    failures.push({ block: 'harness', name: 'browser launch', detail: stack[0], frame: stack[1] });
+}
+
+/* No browser means no block to run; the launch failure still reaches the
+ * named-line and summary output below. */
+for (const test of harness ? selected : []) {
     const module = await import(pathToFileURL(join(testsRoot, `${test}.test.mjs`)).href);
     process.stdout.write(`\n${module.name}\n`);
     try {
@@ -69,5 +79,5 @@ for (const failure of failures) {
 }
 process.stdout.write(`\n${passed} passed, ${failed} failed\n`);
 
-await harness.close();
+if (harness) await harness.close();
 process.exit(failed ? 1 : 0);

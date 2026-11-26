@@ -96,9 +96,19 @@ export async function launch({ headless = true, width = 1280, height = 900 } = {
     let port = 0;
     while (Date.now() < deadline) {
         if (existsSync(portFile)) {
-            const [line] = readFileSync(portFile, 'utf8').split('\n');
-            port = Number(line);
-            if (port) break;
+            /* Chrome writes this file while it is still open for writing. On
+             * Windows the read can raise EBUSY or EPERM, and an early read can
+             * see only the port line. Both mean "not ready", not "failed". */
+            try {
+                const [line, path] = readFileSync(portFile, 'utf8').split('\n');
+                const candidate = Number(line);
+                if (candidate && path && path.trim()) {
+                    port = candidate;
+                    break;
+                }
+            } catch (error) {
+                if (!['EBUSY', 'EPERM', 'ENOENT'].includes(error.code)) throw error;
+            }
         }
         await new Promise(resolve => setTimeout(resolve, 25));
     }
