@@ -38,7 +38,7 @@ Take the installer or the portable build from [releases](https://github.com/nath
 1. Open an image: `Ctrl+O`, paste one with `Ctrl+V`, or drop a file on the stage.
 2. Set the filters. Brightness, contrast, sharpen, saturation and noise re-render on release.
 3. Choose where the JPEG crush runs: before the filters, after them, or both.
-4. Enable bulge, click the image to add a point, drag it to move. Global strength and radius apply to every point.
+4. Enable bulge, click the image to add a point, drag it to move, click it to remove it. Global strength and radius apply to every point.
 5. Save with `Ctrl+S`, or copy the result to the clipboard.
 
 Save and Copy refuse while a render is running or a point is being dragged, so a half-finished canvas is never encoded. The full key list is in [`app/README.md`](app/README.md).
