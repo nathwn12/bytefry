@@ -34,6 +34,7 @@ if (!selected.length) {
 const harness = await createHarness();
 let passed = 0;
 let failed = 0;
+const failures = [];
 
 for (const test of selected) {
     const module = await import(pathToFileURL(join(testsRoot, `${test}.test.mjs`)).href);
@@ -42,7 +43,10 @@ for (const test of selected) {
         const result = await module.run(harness);
         for (const check of result.checks) {
             if (check.ok) passed += 1;
-            else failed += 1;
+            else {
+                failed += 1;
+                failures.push({ block: module.name, name: check.name, detail: check.detail });
+            }
             process.stdout.write(`  ${check.ok ? 'ok  ' : 'FAIL'}  ${check.name}\n`);
             if (!check.ok && check.detail) process.stdout.write(`        ${check.detail}\n`);
         }
@@ -51,10 +55,18 @@ for (const test of selected) {
         }
     } catch (error) {
         failed += 1;
-        process.stdout.write(`  FAIL  ${test} threw\n        ${String(error.stack || error).split('\n')[0]}\n`);
+        const stack = String(error.stack || error).split('\n');
+        failures.push({ block: module.name, name: `${test} threw`, detail: stack[0], frame: stack[1] });
+        process.stdout.write(`  FAIL  ${test} threw\n        ${stack[0]}\n`);
     }
 }
 
+/* A named line per failure, so a red check can be triaged from the log alone. */
+for (const failure of failures) {
+    const first = String(failure.detail || '').split('\n')[0];
+    process.stdout.write(`not ok  ${failure.block}  ${failure.name}  -- ${first}\n`);
+    if (failure.frame) process.stdout.write(`        ${failure.frame.trim()}\n`);
+}
 process.stdout.write(`\n${passed} passed, ${failed} failed\n`);
 
 await harness.close();
