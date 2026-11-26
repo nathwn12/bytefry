@@ -20,7 +20,7 @@
 # because this repository carries no PowerShell.
 #
 # Public CI runs on pushes and pull requests; manual runs remain available.
-# A docs-only change (*.md, docs/, LICEN[CS]E) keeps the required check green and runs no build.
+# A docs-only PR keeps the required check green and runs no build; a docs-only push to main does not start CI at all.
 name: ci
 
 on:
