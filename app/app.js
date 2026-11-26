@@ -523,6 +523,10 @@
             return;
         }
 
+        /* The adopted image stays "loading" until its render actually starts.
+         * Caman calls back asynchronously; clearing loading in adoptImage left
+         * a gap where the canvas was rejected as "Nothing to export yet". */
+        state.loading = false;
         state.rendering = true;
         state.previewing = false;
         state.previewPending = false;
@@ -652,7 +656,13 @@
             el.canvas.removeAttribute('data-caman-id');
             ctx.clearRect(0, 0, el.canvas.width, el.canvas.height);
             ctx.drawImage(loaded, 0, 0, el.canvas.width, el.canvas.height);
-            state.sourceUrl = el.canvas.toDataURL('image/jpeg');
+            /* The pristine copy is a pipeline input, not an export. Encode it
+             * off the displayed canvas so it cannot be mistaken for one. */
+            var sourceCopy = document.createElement('canvas');
+            sourceCopy.width = el.canvas.width;
+            sourceCopy.height = el.canvas.height;
+            sourceCopy.getContext('2d').drawImage(el.canvas, 0, 0);
+            state.sourceUrl = sourceCopy.toDataURL('image/jpeg');
 
             state.cam = (typeof Caman === 'function')
                 ? Caman(el.canvas, function () { requestRender(); })
@@ -675,7 +685,6 @@
         }
 
         state.loaded = true;
-        state.loading = false;
         state.previewing = false;
         state.previewPending = false;
 
