@@ -10,7 +10,7 @@ Scope: CamanJS only. `glfx.js` is a different library and is not covered here.
 ## Pinned upstream
 
 | | |
-|---|---|
+| --- | --- |
 | Package | `caman` 4.1.2 |
 | Repository | <https://github.com/meltingice/CamanJS> |
 | Commit | `36697e053d0b8f3b5cc58fba274b5cd65cb219c2` — `refs/tags/v4.1.2^{}`, "Version bump", 2013-07-27 |
@@ -27,7 +27,7 @@ own repository; see [The plugins submodule](#the-plugins-submodule).
 Three rows, taken today, each one byte-exact:
 
 | File | Bytes | Blob / hash |
-|---|---|---|
+| --- | --- | --- |
 | `app/vendor/caman.full.min.js` as shipped | 78,452, 238 CRLF | sha256 `2994386943f69b79501cf8b38556bcb9d6cf80bdeb4abaedb5002958ef241aca` |
 | the same file after CRLF→LF | 78,214 | git blob `803c2ef65940a5eeca3babec178e5cfbd6348d52`, sha256 `4ed8fa29ed8dceec62e6ea4f9477ad919c41b5d4ead0b57567a044514b0a3dfb` |
 | `upstream/dist/caman.full.min.js` (v4.1.2) | 78,214 | git blob `803c2ef65940a5eeca3babec178e5cfbd6348d52` |
@@ -173,7 +173,7 @@ The check was proven able to fail before it was trusted, on three throwaway
 copies:
 
 | Control | Result |
-|---|---|
+| --- | --- |
 | one byte flipped inside the shipped bundle | exit 1 — shipped sha256, normalised sha256 and blob id all diverge |
 | `presets.coffee` deleted from the vendored sources | exit 1 — 39 files, 22 registrations absent (`vintage` first) |
 | shipped bundle re-saved with LF | exit 1 — 78,214 bytes, 0 CRLF |
@@ -186,7 +186,7 @@ folder. Every blob id below was confirmed by `git hash-object --no-filters` on
 the file as written here, with no mismatch.
 
 | Path | Bytes | Blob | SHA-256 |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `.codoopts` | 92 | `8c2e07f232f798836853dc5a0a8eb494d5f07f53` | `6b7d86d72b21fd58f9f28ede3b494a1356c053ed1e8d4b27f10d7ac77b643d62` |
 | `.gitmodules` | 190 | `b3087377df5de91cc230c9e3966471e52d87c03c` | `8bd44a0a6db46f38f27c392833cced0aafe2ff2a56e9ee618c1bb1dc66beb04b` |
 | `.npmignore` | 37 | `cc97952f2305369712f40f669bbaa6e43899e46e` | `fed3ff990e884faefe7f5a2023e58004c0c1105d0d546aa9cb4c4098ac192110` |
@@ -234,7 +234,7 @@ Generated or irrelevant to the build, so they are left out and recorded here by
 blob id instead. Each is at `36697e05`:
 
 | Path | Bytes | Blob |
-|---|---|---|
+| --- | --- | --- |
 | `dist/caman.full.js` | 114944 | `d983cd49fdc4adf8092e538374fcdeef0a637674` |
 | `dist/caman.full.map` | 64929 | `4c63017db42adb4f5c27b01376b423344241b270` |
 | `dist/caman.full.pack.js` | 45970 | `678365627d069b9c743706ff0b73d63ce2cb6481` |

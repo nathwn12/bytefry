@@ -9,7 +9,7 @@ cancelled.
 the build copies it into the distributable.
 
 | | |
-|---|---|
+| --- | --- |
 | Host version | 0.1.3 (`MemeFryer.Desktop.csproj`); the executable is `Bytefry.exe` |
 | Target | `net10.0-windows`, WinForms, x64 |
 | Embedded engine | `Microsoft.Web.WebView2` 1.0.4314.35 (NuGet, pinned) |
@@ -18,7 +18,7 @@ the build copies it into the distributable.
 
 ## Layout
 
-```
+```text
 desktop/
   MemeFryer.Desktop/          host source (folder and namespace keep the pre-rename name)
     Program.cs                entry, --selfcheck argument, dev flags
@@ -75,7 +75,7 @@ the requested runtime.
 Observed on this machine, Release:
 
 | Build | `Bytefry.exe` | Total folder |
-|---|---|---|
+| --- | --- | --- |
 | self-contained, single file, x64 (default) | 47.6 MB | 47.8 MB with `app/` |
 | self-contained, single file, arm64 | 46.4 MB | 46.6 MB with `app/` |
 | framework-dependent, single file | 1.9 MB | 2.1 MB with `app/` |
@@ -129,7 +129,7 @@ feeds that gate seven fabricated reports to prove each rule still rejects.
 synchronously at the top of `app.js`.
 
 | Member | Result |
-|---|---|
+| --- | --- |
 | `fryerHost.available` | `true` in the host; `false` in a plain browser, where the same members exist as stubs that throw |
 | `fryerHost.version` | `1` |
 | `fryerHost.hostInfo()` | `{ host, platform, arch, bridge, hostVersion, browserVersion, framework, os, dev, appDir, userDataDir, origin }` |
@@ -188,7 +188,7 @@ paints, sizes or hit-tests the non-client area — the suite fails if `FormBorde
 `NCCALCSIZE`, `WM_NCHITTEST` or `DwmExtendFrameIntoClientArea` ever appears.
 
 | Windows | What is asked for |
-|---|---|
+| --- | --- |
 | 11, build 22000+ | `DWMWA_USE_IMMERSIVE_DARK_MODE` (20) with `DWMWA_CAPTION_COLOR` (35) and `DWMWA_TEXT_COLOR` (36), set to the app's own `--panel` `#0e131a` and `--text` `#e7eef7` |
 | 10 2004+, build 18985+ | attribute 20 only: a dark caption, with Windows' own frame and title colour |
 | 10 1809–1909, build 17763+ | attribute 19, the same flag before it was given a public number |
@@ -227,6 +227,7 @@ over:
   local administrator, who can take ownership of any file regardless of its ACL.
 
 ## Packaging notes and limits
+
 - Single-file publish extracts the native WebView2 loader into the .NET single-file cache on first run;
   the first launch is therefore slower than later ones.
 - The self-check writes its probe file under a name that cannot already exist
@@ -262,7 +263,7 @@ The rename is about what a user sees. These keep the pre-rename name because cha
 something else, and none of them is visible in the product:
 
 | Kept | Why |
-|---|---|
+| --- | --- |
 | `%LOCALAPPDATA%\MemeFryer\WebView2` | an installed copy's WebView2 profile; renaming it needs a migration, not an edit |
 | Installer `AppId` `{B4F1C8A2-…}` | Windows' identity for upgrade and uninstall; a new GUID would orphan an existing install |
 | `MEME_FRYER_DEV`, `MEME_FRYER_APP_DIR`, `MEME_FRYER_USER_DATA_DIR` | configuration contract already documented in the root README and used by scripts |

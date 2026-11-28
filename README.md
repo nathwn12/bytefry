@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/platform-windows--64bit-2b3137?logo=windows&logoColor=white" alt="Platform" />
+  <img src="https://img.shields.io/badge/platform-Windows--64bit-2b3137?logo=Windows&logoColor=white" alt="Platform" />
   <img src="https://img.shields.io/badge/filters-5-brightgreen" alt="5 filters" />
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-green" alt="GPL-3.0" /></a>
 </p>

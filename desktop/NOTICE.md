@@ -15,7 +15,7 @@ because it ships as one program with `app/`: one executable serving one bundle.
 ## Third-party software in the built host
 
 | Component | Version | Licence | Use |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | Microsoft.Web.WebView2 (NuGet) | 1.0.4314.35 | BSD-style licence from Microsoft (`LICENSE.txt` in the package) | Hosts the bundled web app |
 | Microsoft Edge WebView2 Runtime | installed on the machine, not redistributed | Microsoft licence | Embedded browser engine |
 | .NET 10 runtime | bundled only in the self-contained build of `Bytefry.exe` | MIT | Host runtime |
@@ -28,7 +28,7 @@ because it ships as one program with `app/`: one executable serving one bundle.
 executable, so a built bundle carries every notice it needs:
 
 | File in the bundle | What it is |
-|---|---|
+| --- | --- |
 | `NOTICE.md` | this file: the licence of the combined work and the components above |
 | `app/LICENSE` | the full GPL version 3 text, verbatim from the original project |
 | `app/ATTRIBUTION.md` | the original work, the itemised changes, the bundled library licences |

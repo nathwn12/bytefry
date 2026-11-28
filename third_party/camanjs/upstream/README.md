@@ -2,7 +2,7 @@
 
 [![Build Status](https://secure.travis-ci.org/meltingice/CamanJS.png)](http://travis-ci.org/meltingice/CamanJS)
 
-The main focus of CamanJS is manipulating images using the HTML5 canvas and Javascript. It's a combination of a simple-to-use interface with advanced and efficient image/canvas editing techniques. It is also completely library independent and can be safely used next to jQuery, YUI, Scriptaculous, MooTools, etc.
+The main focus of CamanJS is manipulating images using the HTML5 canvas and JavaScript. It's a combination of a simple-to-use interface with advanced and efficient image/canvas editing techniques. It is also completely library independent and can be safely used next to jQuery, YUI, Scriptaculous, MooTools, etc.
 
 CamanJS is very easy to extend with new filters and plugins, and it comes with a wide array of image editing functionality, which is only growing as the community makes more plugins. All features that are not a part of the core CamanJS library are in a [separate plugins repository](https://github.com/meltingice/CamanJS-Plugins).
 
@@ -59,7 +59,7 @@ To install all dependencies required for development, run `npm install -d`.
 
 Because all plugins are in a separate repository, make sure you run:
 
-```
+```text
 git submodule init && git submodule update
 ```
 
@@ -79,7 +79,7 @@ CamanJS is hosted on CDN JS if you're looking for a CDN hosting solution. It is 
 
 CamanJS is fully compatible with NodeJS. The easiest way to install it is:
 
-```
+```text
 npm install caman
 ```
 

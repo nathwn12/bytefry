@@ -3,7 +3,7 @@
 ## The original work
 
 | | |
-|---|---|
+| --- | --- |
 | Title | Meme Deep Fryer |
 | Site | <https://deepfriedmemes.com> |
 | Source | <https://github.com/efskap/deepfriedmemes.com> |
@@ -116,7 +116,7 @@ Additions (no original behaviour removed):
 ## Bundled third-party code
 
 | File | Project | Licence | Notice |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `vendor/caman.full.min.js` | [CamanJS](http://camanjs.com/) by Ryan LeFevre and contributors (package `caman` 4.1.2) | BSD-3-Clause, Copyright (c) 2010, Ryan LeFevre | `vendor/NOTICE` |
 | `vendor/glfx.js` | [glfx.js](http://evanw.github.io/glfx.js/) by Evan Wallace, 2011 | MIT, Copyright (C) 2011 by Evan Wallace | `vendor/NOTICE` |
 

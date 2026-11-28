@@ -1,6 +1,6 @@
 # CamanJS Plugins
 
-[CamanJS](https://github.com/meltingice/CamanJS) is an image manipulation library written in Javascript. This repository contains all plugins and features that are not a part of the core library.
+[CamanJS](https://github.com/meltingice/CamanJS) is an image manipulation library written in JavaScript. This repository contains all plugins and features that are not a part of the core library.
 
 ## Contributing
 

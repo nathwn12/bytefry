@@ -16,7 +16,7 @@ Scope: glfx.js only. CamanJS is in `../camanjs/`.
 ## Pinned upstream
 
 | | |
-|---|---|
+| --- | --- |
 | Repository | <https://github.com/evanw/glfx.js> |
 | Releases / tags | none — glfx.js is not published as a package or a versioned release |
 | Source commit | `58841c23919bd59787effc0333a4897b43835412` — "add support for OES_texture_float_linear with polyfill", 2013-07-29 |
@@ -32,7 +32,7 @@ alongside it.
 ## The shipped file is that artifact, one header line apart
 
 | File | Bytes | Blob / hash |
-|---|---|---|
+| --- | --- | --- |
 | `app/vendor/glfx.js` as shipped | 28,403, 59 CRLF | sha256 `68926beb1c83cf8eeaf9ff8e61030158ea27ca0bcfcd6028829a6fca2daa47a1` |
 | the same file after CRLF→LF | 28,344 | git blob `f8f29ba7ef06f87a20797620862504f735fb5cc6`, sha256 `68869b90c50a54e9e5c0c76c575fef3da62cfd7a91b4a96dfff099473d30065c` |
 | `published/glfx.js` (gh-pages `1bf5f4e`) | 28,344 | git blob `5f812a18dbb868a8dbb2db0ff2336dbbf925eeae`, sha256 `14332d2b292a59e07d2cd3f86bf7e3baa4774a39fcc6ab36c0cba41532657ac3` |
@@ -41,7 +41,7 @@ alongside it.
 the size difference exactly. After that, the two files differ on **one line**,
 line 3, the header URL:
 
-```
+```text
  * http://evanw.github.com/glfx.js/     <- what this app ships
  * https://evanw.github.io/glfx.js/     <- what upstream publishes today
 ```
@@ -55,7 +55,7 @@ For completeness of the chain, `deepfriedmemes.com` at
 `f8f29ba7ef06f87a20797620862504f735fb5cc6` — the same file as here, so this app's
 copy is also exactly the original project's copy.
 
-## Why the header says github.com, and why that is not an edit
+## Why the header says GitHub.com, and why that is not an edit
 
 `build.py` writes the header, from a `header` string literal at the top of the
 file. At the pinned commit that literal is the `http://evanw.github.com` form;
@@ -155,7 +155,7 @@ both directions.
 Proven able to fail before it was trusted, on three throwaway copies:
 
 | Control | Result |
-|---|---|
+| --- | --- |
 | one byte flipped inside the shipped bundle | exit 1 — shipped sha256, normalised sha256 and blob id diverge |
 | the published artifact's header URL replaced with a third value | exit 1 — published size, sha256 and blob id diverge, then the header assertions |
 | `swirl.js` deleted from the vendored sources | exit 1 — 33 files, and `swirl` has no function behind it |
@@ -172,7 +172,7 @@ Every blob id below was confirmed by hashing the file as written here, with no
 mismatch.
 
 | Path | Bytes | Blob | SHA-256 |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `upstream/.gitignore` | 128 | `838670fc267cea1fa5f26bbe0500ebcb454ab547` | `add815975d5d768571b6c17e1bfe00b349ab08ad6a88e0b582325cd60cac7bf2` |
 | `upstream/LICENSE` | 1059 | `d8703df912eff879f9d3fad7ece4a073f3a77009` | `223d9247d30f9d8f842cca7de8e2454d104edb435674305ef3df473bae17d44b` |
 | `upstream/README.md` | 649 | `88a6ddf560c98d6d4f4d0bc94735d241461c6442` | `e02f39be0dffb2b98ba3a3ce760ce97ed148b6a834af413388f28819dc4b1d99` |
@@ -215,10 +215,10 @@ root files and all 29 under `src/` — plus the one `gh-pages` artifact. The oth
 27 are the demo site and the browser tests, none of which is an input to
 `glfx.js`, so they are recorded by group instead of vendored:
 
-| Group | Files | Bytes | Why not |
-|---|---|---|---|
-| `www/` | 15 | 631,507 | The documentation and demo site: `www/build.py` (blob `ab202e8e61b9794c3f0e159dfff52717be2ab333`) renders Jinja templates and copies the built `glfx.js` into the site; `www/docs.py` (blob `e6b7abf1d41b8b4f009d03bc2cc86ad54db26163`) generates its docs from `@filter` annotations. Neither writes the library. |
-| `tests/` | 12 | 944,265 | Browser pages plus their media — `image.jpg`, `yosemite.jpg`, `cs224.jpg`, `movie.ogg`, `transparent.png` — that exercise the built file in a browser. No build input. |
+| Group    | Files | Bytes   | Why not                                                                                                                                                                                                                                                                                                            |
+|----------|-------|---------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `www/`   | 15    | 631,507 | The documentation and demo site: `www/build.py` (blob `ab202e8e61b9794c3f0e159dfff52717be2ab333`) renders Jinja templates and copies the built `glfx.js` into the site; `www/docs.py` (blob `e6b7abf1d41b8b4f009d03bc2cc86ad54db26163`) generates its docs from `@filter` annotations. Neither writes the library. |
+| `tests/` | 12    | 944,265 | Browser pages plus their media — `image.jpg`, `yosemite.jpg`, `cs224.jpg`, `movie.ogg`, `transparent.png` — that exercise the built file in a browser. No build input.                                                                                                                                             |
 
 `www/` is worth naming explicitly because it also contains a `build.py`: that one
 is the site builder, not the library builder, and reaching for it by mistake would

@@ -5,7 +5,7 @@ vendored libraries and one script. The Windows host in `desktop/` serves this
 folder from `https://meme-fryer.local/`; opening `index.html` directly in a
 browser works too.
 
-```
+```text
 index.html     markup: stage, grouped controls, licence dialog
 styles.css     dark slate surface, violet/cyan accents, no external assets
 app.js         pipeline (ported) + interface (rewritten)
@@ -52,7 +52,7 @@ input and a download link otherwise. `saveImage` and `openImage` resolve to
 ## Keyboard
 
 | Keys | Action |
-|---|---|
+| --- | --- |
 | `Ctrl+O` | open an image |
 | `Ctrl+S` | save the result |
 | `Ctrl+V` | paste an image from the clipboard |
